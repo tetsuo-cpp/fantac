@@ -6,11 +6,12 @@
 
 namespace fantac {
 
-void FantaCApp::run(const std::string &FileName) {
+void FantaC::run(const std::string &FileName) {
   std::ifstream File(FileName);
-  parse::TokenLexer Lexer;
-  Lexer.read(std::istreambuf_iterator<char>(File),
-             std::istreambuf_iterator<char>());
+
+  Lexer.reset(new parse::TokenLexer(std::istreambuf_iterator<char>(File),
+                                    std::istreambuf_iterator<char>()));
+  Lexer->lex();
 }
 
 } // namespace fantac
