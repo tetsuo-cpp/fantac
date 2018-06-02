@@ -1,5 +1,7 @@
 #include "FantaC.h"
 
+#include <Parse/TokenLexer.h>
+
 #include <fstream>
 
 namespace fantac {

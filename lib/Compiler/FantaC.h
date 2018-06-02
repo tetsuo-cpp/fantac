@@ -1,7 +1,5 @@
 #pragma once
 
-#include <Parse/TokenLexer.h>
-
 #include <string>
 
 namespace fantac {
