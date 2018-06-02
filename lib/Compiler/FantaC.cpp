@@ -11,7 +11,11 @@ void FantaC::run(const std::string &FileName) {
 
   Lexer.reset(new parse::TokenLexer(std::istreambuf_iterator<char>(File),
                                     std::istreambuf_iterator<char>()));
-  Lexer->lex();
+  try {
+    Lexer->lex();
+  } catch (const parse::ParseException &Error) {
+    std::cerr << Error.what() << "\n";
+  }
 }
 
 } // namespace fantac
