@@ -21,6 +21,10 @@ bool isSymbol(char Char) {
   case '}':
   case ';':
   case ':':
+  case '<':
+  case '>':
+  case '=':
+  case ',':
     return true;
   default:
     return false;
@@ -29,9 +33,9 @@ bool isSymbol(char Char) {
 
 } // anonymous namespace
 
-template <typename Iterator> class TokenLexer : public ITokenLexer {
+template <typename TIterator> class TokenLexer : public ITokenLexer {
 public:
-  TokenLexer(Iterator Begin, Iterator End);
+  TokenLexer(TIterator Begin, TIterator End);
   virtual ~TokenLexer() = default;
 
   // ITokenLexer impl.
@@ -45,23 +49,23 @@ private:
   Token lexChar();
   Token lexString();
 
-  Iterator Current, End;
+  TIterator Current, End;
   std::vector<Token> Tokens;
 };
 
-template <typename Iterator>
-TokenLexer<Iterator>::TokenLexer(Iterator Begin, Iterator End)
+template <typename TIterator>
+TokenLexer<TIterator>::TokenLexer(TIterator Begin, TIterator End)
     : Current(Begin), End(End) {}
 
-template <typename Iterator> void TokenLexer<Iterator>::lex() {
+template <typename TIterator> void TokenLexer<TIterator>::lex() {
   while (Current != End) {
     Tokens.push_back(lexToken());
   }
 
-  Tokens.emplace_back(TK_EOF);
+  Tokens.emplace_back(TokenKind::TK_EOF);
 }
 
-template <typename Iterator> Token TokenLexer<Iterator>::lexToken() {
+template <typename TIterator> Token TokenLexer<TIterator>::lexToken() {
   // Trim any leading whitespace.
   while (Current != End && isspace(*Current)) {
     ++Current;
@@ -69,7 +73,7 @@ template <typename Iterator> Token TokenLexer<Iterator>::lexToken() {
 
   if (Current == End) {
     std::cout << "Lexed EOF.\n";
-    return Token(TK_EOF);
+    return Token(TokenKind::TK_EOF);
   }
 
   if (isalpha(*Current)) {
@@ -82,7 +86,7 @@ template <typename Iterator> Token TokenLexer<Iterator>::lexToken() {
 
   if (isSymbol(*Current)) {
     std::cout << "Lexed symbol with value " << *Current << ".\n";
-    return Token(TK_Symbol, std::string(1, *Current++));
+    return Token(TokenKind::TK_Symbol, std::string(1, *Current++));
   }
 
   switch (*Current) {
@@ -95,7 +99,7 @@ template <typename Iterator> Token TokenLexer<Iterator>::lexToken() {
   }
 }
 
-template <typename Iterator> Token TokenLexer<Iterator>::lexIdentifier() {
+template <typename TIterator> Token TokenLexer<TIterator>::lexIdentifier() {
   std::string Identifier;
   while (Current != End && !isspace(*Current) && !isSymbol(*Current)) {
     // TODO: Handle other legal characters.
@@ -109,10 +113,10 @@ template <typename Iterator> Token TokenLexer<Iterator>::lexIdentifier() {
   }
 
   std::cout << "Lexed identifier with value " << Identifier << ".\n";
-  return Token(TK_Identifier, std::move(Identifier));
+  return Token(TokenKind::TK_Identifier, std::move(Identifier));
 }
 
-template <typename Iterator> Token TokenLexer<Iterator>::lexNumber() {
+template <typename TIterator> Token TokenLexer<TIterator>::lexNumber() {
   std::string Number;
   while (Current != End && !isspace(*Current) && !isSymbol(*Current)) {
     // TODO: Handle floats.
@@ -126,10 +130,10 @@ template <typename Iterator> Token TokenLexer<Iterator>::lexNumber() {
   }
 
   std::cout << "Lexed number with value " << Number << ".\n";
-  return Token(TK_Number, std::move(Number));
+  return Token(TokenKind::TK_Number, std::move(Number));
 }
 
-template <typename Iterator> Token TokenLexer<Iterator>::lexChar() {
+template <typename TIterator> Token TokenLexer<TIterator>::lexChar() {
   assert(Current != End);
   assert(*Current == '\'');
 
@@ -148,10 +152,10 @@ template <typename Iterator> Token TokenLexer<Iterator>::lexChar() {
   // this responsibility onto the parsing logic.
   ++Current;
   std::cout << "Lexed character with value " << Char << ".\n";
-  return Token(TK_Char, std::move(Char));
+  return Token(TokenKind::TK_Char, std::move(Char));
 }
 
-template <typename Iterator> Token TokenLexer<Iterator>::lexString() {
+template <typename TIterator> Token TokenLexer<TIterator>::lexString() {
   assert(Current != End);
   assert(*Current == '\"');
 
@@ -172,11 +176,11 @@ template <typename Iterator> Token TokenLexer<Iterator>::lexString() {
   ++Current;
 
   std::cout << "Lexed string literal with value " << Literal << ".\n";
-  return Token(TK_String, std::move(Literal));
+  return Token(TokenKind::TK_String, std::move(Literal));
 }
 
-template <typename Iterator>
-const std::vector<Token> &TokenLexer<Iterator>::getTokens() const {
+template <typename TIterator>
+const std::vector<Token> &TokenLexer<TIterator>::getTokens() const {
   return Tokens;
 }
 

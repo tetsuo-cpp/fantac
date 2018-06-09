@@ -13,6 +13,8 @@ void FantaC::run(const std::string &FileName) {
                                     std::istreambuf_iterator<char>()));
   try {
     Lexer->lex();
+    Parser.reset(new parse::Parser(Lexer->getTokens()));
+    Parser->parse();
   } catch (const parse::ParseException &Error) {
     std::cerr << Error.what() << "\n";
   }

@@ -4,8 +4,6 @@
 
 #include <AST/AST.h>
 
-#include <memory>
-
 namespace fantac::parse {
 
 class Parser {
@@ -18,10 +16,11 @@ public:
   void parse();
 
 private:
-  std::unique_ptr<ast::IASTNode> parseTopLevelExpr();
+  ast::ASTPtr parseTopLevelExpr();
 
   const std::vector<Token> &Tokens;
-  std::vector<std::unique_ptr<ast::IASTNode>> AST;
+  std::vector<ast::ASTPtr> AST;
+  size_t TokenIndex;
 };
 
 } // namespace fantac::parse

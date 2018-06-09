@@ -9,15 +9,15 @@ namespace fantac::parse {
 // Generic exception for parsing related errors.
 class ParseException : public std::runtime_error {
 public:
-  template <typename T> ParseException(T &&Error);
+  template <typename TString> ParseException(TString &&Error);
   virtual ~ParseException() = default;
 };
 
-template <typename T>
-ParseException::ParseException(T &&Error)
-    : std::runtime_error(std::forward<T>(Error)) {}
+template <typename TString>
+ParseException::ParseException(TString &&Error)
+    : std::runtime_error(std::forward<TString>(Error)) {}
 
-enum TokenKind {
+enum class TokenKind {
   // Literals.
   TK_Number,
   TK_Char,
@@ -31,9 +31,9 @@ enum TokenKind {
 };
 
 struct Token {
-  template <typename T>
-  Token(TokenKind Kind, T &&Value)
-      : Kind(Kind), Value(std::forward<T>(Value)) {}
+  template <typename TString>
+  Token(TokenKind Kind, TString &&Value)
+      : Kind(Kind), Value(std::forward<TString>(Value)) {}
   explicit Token(TokenKind Kind) : Kind(Kind) {}
 
   TokenKind Kind;
