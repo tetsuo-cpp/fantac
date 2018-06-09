@@ -7,6 +7,28 @@
 
 namespace fantac::parse {
 
+namespace {
+
+bool isSymbol(char Char) {
+  switch (Char) {
+  case '+':
+  case '-':
+  case '*':
+  case '/':
+  case '(':
+  case ')':
+  case '{':
+  case '}':
+  case ';':
+  case ':':
+    return true;
+  default:
+    return false;
+  }
+}
+
+} // anonymous namespace
+
 template <typename Iterator> class TokenLexer : public ITokenLexer {
 public:
   TokenLexer(Iterator Begin, Iterator End);
@@ -46,6 +68,7 @@ template <typename Iterator> Token TokenLexer<Iterator>::lexToken() {
   }
 
   if (Current == End) {
+    std::cout << "Lexed EOF.\n";
     return Token(TK_EOF);
   }
 
@@ -55,6 +78,11 @@ template <typename Iterator> Token TokenLexer<Iterator>::lexToken() {
 
   if (isdigit(*Current)) {
     return lexNumber();
+  }
+
+  if (isSymbol(*Current)) {
+    std::cout << "Lexed symbol with value " << *Current << ".\n";
+    return Token(TK_Symbol, std::string(1, *Current++));
   }
 
   switch (*Current) {
@@ -69,7 +97,7 @@ template <typename Iterator> Token TokenLexer<Iterator>::lexToken() {
 
 template <typename Iterator> Token TokenLexer<Iterator>::lexIdentifier() {
   std::string Identifier;
-  while (Current != End && !isspace(*Current)) {
+  while (Current != End && !isspace(*Current) && !isSymbol(*Current)) {
     // TODO: Handle other legal characters.
     if (!isalpha(*Current) && *Current != '_') {
       throw ParseException("TokenLexer: Encountered non alphabetical character "
@@ -86,7 +114,7 @@ template <typename Iterator> Token TokenLexer<Iterator>::lexIdentifier() {
 
 template <typename Iterator> Token TokenLexer<Iterator>::lexNumber() {
   std::string Number;
-  while (Current != End && !isspace(*Current)) {
+  while (Current != End && !isspace(*Current) && !isSymbol(*Current)) {
     // TODO: Handle floats.
     if (!isdigit(*Current)) {
       throw ParseException(
@@ -115,6 +143,9 @@ template <typename Iterator> Token TokenLexer<Iterator>::lexChar() {
                          "length greater than 1.");
   }
 
+  // Could actually be a keyword at this point. Not sure whether it's worth
+  // having separate token kinds for each keyword. Or perhaps I could just hoist
+  // this responsibility onto the parsing logic.
   ++Current;
   std::cout << "Lexed character with value " << Char << ".\n";
   return Token(TK_Char, std::move(Char));

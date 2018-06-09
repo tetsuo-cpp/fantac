@@ -18,22 +18,26 @@ ParseException::ParseException(T &&Error)
     : std::runtime_error(std::forward<T>(Error)) {}
 
 enum TokenKind {
-  TK_Keyword,
+  // Literals.
   TK_Number,
   TK_Char,
   TK_String,
+  // Var names, func names and keywords.
   TK_Identifier,
+  // Operators, braces, etc.
+  TK_Symbol,
+  // End of file.
   TK_EOF
 };
 
 struct Token {
   template <typename T>
-  Token(TokenKind Kind, T &&Symbol)
-      : Kind(Kind), Symbol(std::forward<T>(Symbol)) {}
+  Token(TokenKind Kind, T &&Value)
+      : Kind(Kind), Value(std::forward<T>(Value)) {}
   explicit Token(TokenKind Kind) : Kind(Kind) {}
 
   TokenKind Kind;
-  const std::string Symbol;
+  const std::string Value;
 };
 
 class ITokenLexer {
