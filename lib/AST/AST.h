@@ -9,19 +9,19 @@ struct IASTNode {};
 
 using ASTPtr = std::unique_ptr<IASTNode>;
 
-enum class TypeKind {
-  TK_Int,
-  TK_UInt,
-  TK_Long,
-  TK_ULong,
-  TK_Float,
-  TK_Double,
-  TK_Char
+enum class ValueKind {
+  VK_Int,
+  VK_UInt,
+  VK_Long,
+  VK_ULong,
+  VK_Float,
+  VK_Double,
+  VK_Char
 };
 
 struct FunctionNode : public IASTNode {
   template <typename TName, typename TArgs>
-  FunctionNode(TName &&Name, TypeKind Return, TArgs &&Args,
+  FunctionNode(TName &&Name, ValueKind Return, TArgs &&Args,
                std::vector<ASTPtr> &&Body)
       : Name(std::forward<TName>(Name)), Return(Return),
         Args(std::forward<TArgs>(Args)), Body(std::move(Body)) {}
@@ -30,8 +30,8 @@ struct FunctionNode : public IASTNode {
   friend TStream &operator<<(TStream &Stream, const FunctionNode &F);
 
   const std::string Name;
-  TypeKind Return;
-  const std::vector<std::pair<std::string, TypeKind>> Args;
+  ValueKind Return;
+  const std::vector<std::pair<std::string, ValueKind>> Args;
   const std::vector<ASTPtr> Body;
 };
 
@@ -43,7 +43,6 @@ TStream &operator<<(TStream &Stream, const FunctionNode &F) {
   }
 
   Stream << "}";
-
   return Stream;
 }
 

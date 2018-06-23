@@ -7,73 +7,88 @@ namespace fantac::parse {
 
 namespace {
 
-ast::TypeKind stringToTypeKind(const std::string &Type) {
+ast::ValueKind stringToValueKind(const std::string &Type) {
   if (Type == "int") {
-    return ast::TypeKind::TK_Int;
+    return ast::ValueKind::VK_Int;
   } else if (Type == "long") {
-    return ast::TypeKind::TK_Long;
+    return ast::ValueKind::VK_Long;
   } else if (Type == "float") {
-    return ast::TypeKind::TK_Float;
+    return ast::ValueKind::VK_Float;
   } else if (Type == "double") {
-    return ast::TypeKind::TK_Double;
+    return ast::ValueKind::VK_Double;
   } else {
-    return ast::TypeKind::TK_Char;
+    return ast::ValueKind::VK_Char;
   }
 }
 
 } // anonymous namespace
 
 Parser::Parser(const std::vector<Token> &Tokens)
-    : Tokens(Tokens), TokenIndex(0) {}
+    : Tokens(Tokens), TokenIter(Tokens.begin()) {
+  static_cast<void>(this->Tokens);
+}
 
 void Parser::parse() {
-  // while (auto TopLevelNode = parseTopLevelExpr()) {
-  //   AST.push_back(std::move(TopLevelNode));
-  // }
-  AST.push_back(parseTopLevelExpr());
+  while (auto TopLevelNode = parseTopLevelExpr()) {
+    AST.push_back(std::move(TopLevelNode));
+  }
 }
 
 ast::ASTPtr Parser::parseTopLevelExpr() {
-  auto *Tok = &Tokens.at(TokenIndex++);
+  auto *Tok = &*TokenIter;
   if (Tok->Kind == TokenKind::TK_EOF) {
     return nullptr;
   }
 
-  // TODO: Let's just assume it's a function definition right now to get a feel
-  // for how this works.
+  // Find out what top level expr we're currently looking at and then parse it.
+  if (isFunctionDef()) {
+    return parseFunctionDef();
+  } else if (isFunctionDec()) {
+    return parseFunctionDec();
+  } else {
+    throw ParseException("Parser: Malformed top level expression.");
+  }
+}
+
+bool Parser::isFunctionDef() const { return true; }
+
+bool Parser::isFunctionDec() const { return false; }
+
+ast::ASTPtr Parser::parseFunctionDef() {
+  auto *Tok = &*TokenIter;
 
   // Parse return type.
-  auto Return = stringToTypeKind(Tok->Value);
+  auto Return = stringToValueKind(Tok->Value);
 
   // Parse name.
-  Tok = &Tokens.at(TokenIndex++);
+  Tok = &*TokenIter++;
   assert(Tok->Kind == TokenKind::TK_Identifier);
   auto Name = Tok->Value;
 
   // Parse args.
-  std::vector<std::pair<std::string, ast::TypeKind>> Args;
+  std::vector<std::pair<std::string, ast::ValueKind>> Args;
 
   // Either an open bracket or a comma.
-  Tok = &Tokens.at(TokenIndex++);
+  Tok = &*TokenIter;
   assert(Tok->Kind == TokenKind::TK_Symbol);
   assert(Tok->Value == "(");
 
   // End of args list.
   while (Tok->Value != ")") {
     // Arg type.
-    Tok = &Tokens.at(TokenIndex++);
-    auto Type = stringToTypeKind(Tok->Value);
+    Tok = &*TokenIter;
+    auto Type = stringToValueKind(Tok->Value);
 
     // Arg name.
-    Tok = &Tokens.at(TokenIndex++);
+    Tok = &*TokenIter;
     auto ArgName = Tok->Value;
 
     // Add arg.
     Args.emplace_back(std::move(ArgName), Type);
 
-    Tok = &Tokens.at(TokenIndex);
+    Tok = &*TokenIter;
     if (Tok->Value == ",") {
-      TokenIndex++;
+      ++TokenIter;
     }
   }
 
@@ -87,5 +102,7 @@ ast::ASTPtr Parser::parseTopLevelExpr() {
 
   return Function;
 }
+
+ast::ASTPtr Parser::parseFunctionDec() { return nullptr; }
 
 } // namespace fantac::parse
