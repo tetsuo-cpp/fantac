@@ -1,7 +1,5 @@
 int test_func(int x) {
-  if (x > 5) {
-    return x * x;
-  }
-
+  int y = 2;
+  x = y;
   return x;
 }

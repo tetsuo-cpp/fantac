@@ -43,8 +43,8 @@ ast::ASTPtr Parser::parseTopLevelExpr() {
   // Find out what top level expr we're currently looking at and then parse it.
   if (isFunctionDef()) {
     return parseFunctionDef();
-  } else if (isFunctionDec()) {
-    return parseFunctionDec();
+  } else if (isFunctionDecl()) {
+    return parseFunctionDecl();
   } else {
     throw ParseException("Parser: Malformed top level expression.");
   }
@@ -52,10 +52,10 @@ ast::ASTPtr Parser::parseTopLevelExpr() {
 
 bool Parser::isFunctionDef() const { return true; }
 
-bool Parser::isFunctionDec() const { return false; }
+bool Parser::isFunctionDecl() const { return false; }
 
 ast::ASTPtr Parser::parseFunctionDef() {
-  auto *Tok = &*TokenIter;
+  auto *Tok = &*TokenIter++;
 
   // Parse return type.
   auto Return = stringToValueKind(Tok->Value);
@@ -69,31 +69,36 @@ ast::ASTPtr Parser::parseFunctionDef() {
   std::vector<std::pair<std::string, ast::ValueKind>> Args;
 
   // Either an open bracket or a comma.
-  Tok = &*TokenIter;
+  Tok = &*TokenIter++;
   assert(Tok->Kind == TokenKind::TK_Symbol);
   assert(Tok->Value == "(");
 
   // End of args list.
   while (Tok->Value != ")") {
     // Arg type.
-    Tok = &*TokenIter;
+    Tok = &*TokenIter++;
     auto Type = stringToValueKind(Tok->Value);
 
     // Arg name.
-    Tok = &*TokenIter;
+    Tok = &*TokenIter++;
     auto ArgName = Tok->Value;
 
     // Add arg.
     Args.emplace_back(std::move(ArgName), Type);
 
-    Tok = &*TokenIter;
-    if (Tok->Value == ",") {
-      ++TokenIter;
-    }
+    Tok = &*TokenIter++;
   }
 
-  // TODO: Parse the body.
+  Tok = &*TokenIter++;
+  assert(Tok->Kind == TokenKind::TK_Symbol);
+  assert(Tok->Value == "{");
+
+  Tok = &*TokenIter++;
   std::vector<ast::ASTPtr> Body;
+  while (Tok->Value != "}") {
+    Body.push_back(parseStatement());
+    Tok = &*TokenIter++;
+  }
 
   auto Function = std::make_unique<ast::FunctionNode>(
       std::move(Name), Return, std::move(Args), std::move(Body));
@@ -103,6 +108,16 @@ ast::ASTPtr Parser::parseFunctionDef() {
   return Function;
 }
 
-ast::ASTPtr Parser::parseFunctionDec() { return nullptr; }
+ast::ASTPtr Parser::parseFunctionDecl() { return nullptr; }
+
+ast::ASTPtr Parser::parseStatement() {
+  // Placeholder to skip over statements.
+  const Token *Tok = nullptr;
+  do {
+    Tok = &*TokenIter++;
+  } while (Tok->Value != ";");
+
+  return nullptr;
+}
 
 } // namespace fantac::parse
