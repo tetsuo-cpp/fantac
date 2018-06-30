@@ -13,7 +13,7 @@ public:
   Parser(const std::vector<Token> &Tokens);
   virtual ~Parser() = default;
 
-  void parse();
+  const std::vector<ast::ASTPtr> &parse();
 
 private:
   // Function to parse a top level expression of a source file.

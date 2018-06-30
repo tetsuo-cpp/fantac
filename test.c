@@ -3,3 +3,5 @@ int test_func(int x) {
   x = y;
   return x;
 }
+
+int other_func(int x, int y) { return x * y; }

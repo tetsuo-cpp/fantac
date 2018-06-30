@@ -1,7 +1,8 @@
 #pragma once
 
-#include <Parse/Parser.h>
+#include <AST/AST.h>
 #include <Parse/ParseInterfaces.h>
+#include <Parse/Parser.h>
 
 #include <memory>
 #include <string>
@@ -17,6 +18,7 @@ public:
 private:
   std::unique_ptr<parse::ITokenLexer> Lexer;
   std::unique_ptr<parse::Parser> Parser;
+  std::vector<std::unique_ptr<ast::IASTVisitor>> ASTVisitors;
 };
 
 } // namespace fantac

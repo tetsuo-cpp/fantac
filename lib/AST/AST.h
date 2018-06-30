@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 namespace fantac::ast {
 
@@ -54,12 +55,15 @@ struct FunctionNode : public IASTNode {
 
 template <typename TStream>
 TStream &operator<<(TStream &Stream, const FunctionNode &F) {
-  Stream << "{Name=" << F.Name << ", Args=";
+  Stream << "{Name=" << F.Name << ", Args=(";
   for (const auto &Args : F.Args) {
-    Stream << Args.first << ",";
+    Stream << Args.first;
+    if (Args != F.Args.back()) {
+      Stream << ", ";
+    }
   }
 
-  Stream << "}";
+  Stream << ")}";
   return Stream;
 }
 

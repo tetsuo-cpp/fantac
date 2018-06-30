@@ -28,10 +28,12 @@ Parser::Parser(const std::vector<Token> &Tokens)
   static_cast<void>(this->Tokens);
 }
 
-void Parser::parse() {
+const std::vector<ast::ASTPtr> &Parser::parse() {
   while (auto TopLevelNode = parseTopLevelExpr()) {
     AST.push_back(std::move(TopLevelNode));
   }
+
+  return AST;
 }
 
 ast::ASTPtr Parser::parseTopLevelExpr() {
@@ -100,12 +102,8 @@ ast::ASTPtr Parser::parseFunctionDef() {
     Tok = &*TokenIter++;
   }
 
-  auto Function = std::make_unique<ast::FunctionNode>(
-      std::move(Name), Return, std::move(Args), std::move(Body));
-
-  std::cout << "Parsed AST: " << *Function << ".\n";
-
-  return Function;
+  return std::make_unique<ast::FunctionNode>(std::move(Name), Return,
+                                             std::move(Args), std::move(Body));
 }
 
 ast::ASTPtr Parser::parseFunctionDecl() { return nullptr; }
