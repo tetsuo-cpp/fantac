@@ -20,12 +20,14 @@ private:
   ast::ASTPtr parseTopLevelExpr();
 
   // Helpers to check the current type of top level expression.
-  bool isFunctionDef() const;
+  std::vector<Token>::const_iterator isFunctionSig() const;
   bool isFunctionDecl() const;
+  bool isFunctionDef() const;
 
   // Helpers to parse each type of top level expression.
-  ast::ASTPtr parseFunctionDef();
+  std::unique_ptr<ast::FunctionDecl> parseFunctionSig();
   ast::ASTPtr parseFunctionDecl();
+  ast::ASTPtr parseFunctionDef();
 
   ast::ASTPtr parseStatement();
 

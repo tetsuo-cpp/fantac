@@ -14,7 +14,8 @@ public:
   virtual ~IRGenerator() = default;
 
   // IASTVisitor impl.
-  virtual void visit(ast::FunctionNode *AST) override;
+  virtual void visit(ast::FunctionDecl *AST) override;
+  virtual void visit(ast::FunctionDef *AST) override;
 
 private:
   llvm::LLVMContext Context;

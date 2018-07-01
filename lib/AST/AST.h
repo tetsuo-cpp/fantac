@@ -6,24 +6,26 @@
 namespace fantac::ast {
 
 // Fwd declare all AST nodes.
-struct FunctionNode;
+struct FunctionDecl;
+struct FunctionDef;
 
 // Visitor interface for walking the AST.
 class IASTVisitor {
 public:
   virtual ~IASTVisitor() = default;
 
-  virtual void visit(FunctionNode *AST) = 0;
+  virtual void visit(FunctionDecl *AST) = 0;
+  virtual void visit(FunctionDef *AST) = 0;
 };
 
 // Base class for all AST nodes.
-struct IASTNode {
-  virtual ~IASTNode() = default;
+struct IAST {
+  virtual ~IAST() = default;
 
   virtual void accept(IASTVisitor *Visitor) = 0;
 };
 
-using ASTPtr = std::unique_ptr<IASTNode>;
+using ASTPtr = std::unique_ptr<IAST>;
 
 enum class ValueKind {
   VK_Int,
@@ -35,26 +37,46 @@ enum class ValueKind {
   VK_Char
 };
 
-struct FunctionNode : public IASTNode {
+struct FunctionDecl : public IAST {
   template <typename TName, typename TArgs>
-  FunctionNode(TName &&Name, ValueKind Return, TArgs &&Args,
-               std::vector<ASTPtr> &&Body)
+  FunctionDecl(TName &&Name, ValueKind Return, TArgs &&Args)
       : Name(std::forward<TName>(Name)), Return(Return),
-        Args(std::forward<TArgs>(Args)), Body(std::move(Body)) {}
+        Args(std::forward<TArgs>(Args)) {}
 
+  // IAST impl.
   virtual void accept(IASTVisitor *Visitor) override { Visitor->visit(this); }
 
   template <typename TStream>
-  friend TStream &operator<<(TStream &Stream, const FunctionNode &F);
+  friend TStream &operator<<(TStream &Stream, const FunctionDecl &F);
 
   const std::string Name;
   ValueKind Return;
   const std::vector<std::pair<std::string, ValueKind>> Args;
+};
+
+struct FunctionDef : public IAST {
+  FunctionDef(std::unique_ptr<FunctionDecl> &&Decl, std::vector<ASTPtr> &&Body)
+      : Decl(std::move(Decl)), Body(std::move(Body)) {}
+
+  template <typename TName, typename TArgs>
+  FunctionDef(TName &&Name, ValueKind Return, TArgs &&Args,
+              std::vector<ASTPtr> &&Body)
+      : Decl(new FunctionDecl(std::forward<TName>(Name), Return,
+                              std::forward<TArgs>(Args))),
+        Body(std::move(Body)) {}
+
+  // IAST impl.
+  virtual void accept(IASTVisitor *Visitor) override { Visitor->visit(this); }
+
+  template <typename TStream>
+  friend TStream &operator<<(TStream &Stream, const FunctionDef &F);
+
+  std::unique_ptr<FunctionDecl> Decl;
   const std::vector<ASTPtr> Body;
 };
 
 template <typename TStream>
-TStream &operator<<(TStream &Stream, const FunctionNode &F) {
+TStream &operator<<(TStream &Stream, const FunctionDecl &F) {
   Stream << "{Name=" << F.Name << ", Args=(";
   for (const auto &Args : F.Args) {
     Stream << Args.first;
@@ -64,6 +86,12 @@ TStream &operator<<(TStream &Stream, const FunctionNode &F) {
   }
 
   Stream << ")}";
+  return Stream;
+}
+
+template <typename TStream>
+TStream &operator<<(TStream &Stream, const FunctionDef &F) {
+  Stream << *F.Decl;
   return Stream;
 }
 

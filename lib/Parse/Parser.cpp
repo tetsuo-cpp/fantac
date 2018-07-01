@@ -1,5 +1,6 @@
 #include "Parser.h"
 
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 
@@ -18,6 +19,13 @@ ast::ValueKind stringToValueKind(const std::string &Type) {
     return ast::ValueKind::VK_Double;
   } else {
     return ast::ValueKind::VK_Char;
+  }
+}
+
+template <typename TError, typename TCond, typename... TArgs>
+void checkOrThrow(TError &&Error, TCond Cond, TArgs... Args) {
+  if (!Cond(Args...)) {
+    throw ParseException(std::forward<TError>(Error));
   }
 }
 
@@ -43,20 +51,75 @@ ast::ASTPtr Parser::parseTopLevelExpr() {
   }
 
   // Find out what top level expr we're currently looking at and then parse it.
-  if (isFunctionDef()) {
-    return parseFunctionDef();
-  } else if (isFunctionDecl()) {
+  if (isFunctionDecl()) {
+    std::cout << "Parsing function decl.\n";
     return parseFunctionDecl();
+  } else if (isFunctionDef()) {
+    std::cout << "Parsing function def.\n";
+    return parseFunctionDef();
   } else {
     throw ParseException("Parser: Malformed top level expression.");
   }
 }
 
-bool Parser::isFunctionDef() const { return true; }
+std::vector<Token>::const_iterator Parser::isFunctionSig() const {
+  // Return type should be identifier.
+  auto *Tok = &*TokenIter;
+  if (Tok->Kind != TokenKind::TK_Identifier) {
+    return Tokens.end();
+  }
 
-bool Parser::isFunctionDecl() const { return false; }
+  // Func name should be identifier.
+  Tok = &*(TokenIter + 1);
+  if (Tok->Kind != TokenKind::TK_Identifier) {
+    return Tokens.end();
+  }
 
-ast::ASTPtr Parser::parseFunctionDef() {
+  Tok = &*(TokenIter + 2);
+  if (Tok->Kind != TokenKind::TK_Symbol || Tok->Value != "(") {
+    return Tokens.end();
+  }
+
+  // Check that there's a close bracket after the args.
+  auto ArgEndIter =
+      std::find_if(TokenIter + 2, Tokens.end(), [](const Token &Tok) {
+        return Tok.Kind == TokenKind::TK_Symbol && Tok.Value == ")";
+      });
+
+  return ArgEndIter;
+}
+
+bool Parser::isFunctionDecl() const {
+  auto FunctionSigIter = isFunctionSig();
+  if (FunctionSigIter == Tokens.end()) {
+    return false;
+  }
+
+  // Expecting semicolon (as opposed to open brace).
+  auto *Tok = &*(FunctionSigIter + 1);
+  if (Tok->Kind != TokenKind::TK_Symbol || Tok->Value != ";") {
+    return false;
+  }
+
+  return true;
+}
+
+bool Parser::isFunctionDef() const {
+  auto FunctionSigIter = isFunctionSig();
+  if (FunctionSigIter == Tokens.end()) {
+    return false;
+  }
+
+  // Expecting open brace (as opposed to semicolon).
+  auto *Tok = &*(FunctionSigIter + 1);
+  if (Tok->Kind != TokenKind::TK_Symbol || Tok->Value != "{") {
+    return false;
+  }
+
+  return true;
+}
+
+std::unique_ptr<ast::FunctionDecl> Parser::parseFunctionSig() {
   auto *Tok = &*TokenIter++;
 
   // Parse return type.
@@ -70,10 +133,13 @@ ast::ASTPtr Parser::parseFunctionDef() {
   // Parse args.
   std::vector<std::pair<std::string, ast::ValueKind>> Args;
 
-  // Either an open bracket or a comma.
   Tok = &*TokenIter++;
-  assert(Tok->Kind == TokenKind::TK_Symbol);
-  assert(Tok->Value == "(");
+  checkOrThrow("Parser: Expected open bracket in function definition.",
+               [](const Token *Tok) {
+                 return Tok && Tok->Kind == TokenKind::TK_Symbol &&
+                        Tok->Value == "(";
+               },
+               Tok);
 
   // End of args list.
   while (Tok->Value != ")") {
@@ -88,32 +154,55 @@ ast::ASTPtr Parser::parseFunctionDef() {
     // Add arg.
     Args.emplace_back(std::move(ArgName), Type);
 
+    // Either a close bracket or a comma.
     Tok = &*TokenIter++;
   }
 
-  Tok = &*TokenIter++;
-  assert(Tok->Kind == TokenKind::TK_Symbol);
-  assert(Tok->Value == "{");
+  return std::make_unique<ast::FunctionDecl>(std::move(Name), Return,
+                                             std::move(Args));
+}
+
+ast::ASTPtr Parser::parseFunctionDecl() {
+  auto Decl = parseFunctionSig();
+
+  auto *Tok = &*TokenIter++;
+  checkOrThrow("Parser: Expected semicolon in function declaration.",
+               [](const Token *Tok) {
+                 return Tok && Tok->Kind == TokenKind::TK_Symbol &&
+                        Tok->Value == ";";
+               },
+               Tok);
+
+  return Decl;
+}
+
+ast::ASTPtr Parser::parseFunctionDef() {
+  auto Decl = parseFunctionSig();
+
+  auto *Tok = &*TokenIter++;
+  checkOrThrow("Parser: Expected open brace in function definiton.",
+               [](const Token *Tok) {
+                 return Tok && Tok->Kind == TokenKind::TK_Symbol &&
+                        Tok->Value == "{";
+               },
+               Tok);
 
   Tok = &*TokenIter++;
   std::vector<ast::ASTPtr> Body;
   while (Tok->Value != "}") {
     Body.push_back(parseStatement());
-    Tok = &*TokenIter++;
+    Tok = &*++TokenIter;
   }
 
-  return std::make_unique<ast::FunctionNode>(std::move(Name), Return,
-                                             std::move(Args), std::move(Body));
-}
+  ++TokenIter;
 
-ast::ASTPtr Parser::parseFunctionDecl() { return nullptr; }
+  return std::make_unique<ast::FunctionDef>(std::move(Decl), std::move(Body));
+}
 
 ast::ASTPtr Parser::parseStatement() {
   // Placeholder to skip over statements.
-  const Token *Tok = nullptr;
-  do {
-    Tok = &*TokenIter++;
-  } while (Tok->Value != ";");
+  TokenIter = std::find_if(TokenIter, Tokens.end(),
+                           [](const Token &Tok) { return Tok.Value == ";"; });
 
   return nullptr;
 }

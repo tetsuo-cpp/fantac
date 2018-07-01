@@ -12,12 +12,18 @@ public:
   virtual ~ASTLogger() = default;
 
   // IASTVisitor impl.
-  virtual void visit(FunctionNode *AST) override;
+  virtual void visit(FunctionDecl *AST) override;
+  virtual void visit(FunctionDef *AST) override;
 };
 
-inline void ASTLogger::visit(FunctionNode *AST) {
+inline void ASTLogger::visit(FunctionDecl *AST) {
   assert(AST);
-  std::cout << "FunctionNode: " << *AST << ".\n";
+  std::cout << "FunctionDecl: " << *AST << ".\n";
+}
+
+inline void ASTLogger::visit(FunctionDef *AST) {
+  assert(AST);
+  std::cout << "FunctionDef: " << *AST << ".\n";
 }
 
 } // namespace fantac::ast

@@ -2,8 +2,10 @@
 
 namespace fantac::codegen {
 
-IRGenerator::IRGenerator() : Builder(Context), Module("fantac", Context) {}
+IRGenerator::IRGenerator() : Builder(Context), Module("FantaC", Context) {}
 
-void IRGenerator::visit(ast::FunctionNode *AST) { static_cast<void>(AST); }
+void IRGenerator::visit(ast::FunctionDecl *AST) { static_cast<void>(AST); }
+
+void IRGenerator::visit(ast::FunctionDef *AST) { static_cast<void>(AST); }
 
 } // namespace fantac::codegen

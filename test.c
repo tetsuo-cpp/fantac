@@ -1,7 +1,9 @@
-int test_func(int x) {
-  int y = 2;
+int foo(int x, int y);
+
+int bar(int x) {
+  int y = foo(x, x);
   x = y;
   return x;
 }
 
-int other_func(int x, int y) { return x * y; }
+int foo(int x, int y) { return x * y; }
