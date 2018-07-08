@@ -17,16 +17,21 @@ ast::ValueKind stringToValueKind(const std::string &Type) {
     return ast::ValueKind::VK_Float;
   } else if (Type == "double") {
     return ast::ValueKind::VK_Double;
-  } else {
+  } else if (Type == "char") {
     return ast::ValueKind::VK_Char;
+  } else {
+    return ast::ValueKind::VK_None;
   }
 }
 
-template <typename TError, typename TCond, typename... TArgs>
-void checkOrThrow(TError &&Error, TCond Cond, TArgs... Args) {
-  if (!Cond(Args...)) {
-    throw ParseException(std::forward<TError>(Error));
+template <typename TError>
+void enforceToken(TError &&Error, const Token *Token, TokenKind ExpectedKind,
+                  const std::string &ExpectedValue) {
+  if (Token && Token->Kind == ExpectedKind && Token->Value == ExpectedValue) {
+    return;
   }
+
+  throw ParseException(std::forward<TError>(Error));
 }
 
 } // anonymous namespace
@@ -134,12 +139,8 @@ std::unique_ptr<ast::FunctionDecl> Parser::parseFunctionSig() {
   std::vector<std::pair<std::string, ast::ValueKind>> Args;
 
   Tok = &*TokenIter++;
-  checkOrThrow("Parser: Expected open bracket in function definition.",
-               [](const Token *Tok) {
-                 return Tok && Tok->Kind == TokenKind::TK_Symbol &&
-                        Tok->Value == "(";
-               },
-               Tok);
+  enforceToken("Parser: Was expecting beginning of argument list.", Tok,
+               TokenKind::TK_Symbol, "(");
 
   // End of args list.
   while (Tok->Value != ")") {
@@ -166,12 +167,8 @@ ast::ASTPtr Parser::parseFunctionDecl() {
   auto Decl = parseFunctionSig();
 
   auto *Tok = &*TokenIter++;
-  checkOrThrow("Parser: Expected semicolon in function declaration.",
-               [](const Token *Tok) {
-                 return Tok && Tok->Kind == TokenKind::TK_Symbol &&
-                        Tok->Value == ";";
-               },
-               Tok);
+  enforceToken("Parser: Expected semicolon at end of function declaration.",
+               Tok, TokenKind::TK_Symbol, ";");
 
   return Decl;
 }
@@ -180,14 +177,10 @@ ast::ASTPtr Parser::parseFunctionDef() {
   auto Decl = parseFunctionSig();
 
   auto *Tok = &*TokenIter++;
-  checkOrThrow("Parser: Expected open brace in function definiton.",
-               [](const Token *Tok) {
-                 return Tok && Tok->Kind == TokenKind::TK_Symbol &&
-                        Tok->Value == "{";
-               },
-               Tok);
+  enforceToken("Parser: Expected open brace after function signature.", Tok,
+               TokenKind::TK_Symbol, "{");
 
-  Tok = &*TokenIter++;
+  Tok = &*TokenIter;
   std::vector<ast::ASTPtr> Body;
   while (Tok->Value != "}") {
     Body.push_back(parseStatement());
@@ -200,11 +193,50 @@ ast::ASTPtr Parser::parseFunctionDef() {
 }
 
 ast::ASTPtr Parser::parseStatement() {
-  // Placeholder to skip over statements.
-  TokenIter = std::find_if(TokenIter, Tokens.end(),
-                           [](const Token &Tok) { return Tok.Value == ";"; });
+  if (isVarDecl()) {
+    std::cout << "Parsing variable decl.\n";
+    return parseVarDecl();
+  } else {
+    // Placeholder to skip over statements.
+    TokenIter = std::find_if(TokenIter, Tokens.end(),
+                             [](const Token &Tok) { return Tok.Value == ";"; });
+  }
 
   return nullptr;
+}
+
+bool Parser::isVarDecl() const {
+  const auto &Tok = *TokenIter;
+  return Tok.Kind == TokenKind::TK_Identifier &&
+         stringToValueKind(Tok.Value) != ast::ValueKind::VK_None;
+}
+
+ast::ASTPtr Parser::parseVarDecl() {
+  // Get type.
+  auto *Tok = &*TokenIter++;
+  ast::ValueKind Type = stringToValueKind(Tok->Value);
+
+  // Get name.
+  Tok = &*TokenIter++;
+  std::string Name = Tok->Value;
+
+  auto Var = std::make_unique<ast::VariableDecl>(Type, std::move(Name));
+
+  // Check whether its a semicolon or equals.
+  Tok = &*TokenIter++;
+
+  // TODO: Figure out init later.
+  if (Tok->Value != "=" && Tok->Value != ";") {
+    throw ParseException("Parser: Expected either end of statement or "
+                         "initialisation after variable declaration.");
+  }
+
+  if (Tok->Value == "=") {
+    TokenIter = std::find_if(TokenIter, Tokens.end(),
+                             [](const Token &Tok) { return Tok.Value == ";"; });
+  }
+
+  return Var;
 }
 
 } // namespace fantac::parse

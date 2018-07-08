@@ -6,4 +6,8 @@ int bar(int x) {
   return x;
 }
 
-int foo(int x, int y) { return x * y; }
+int foo(int x, int y) {
+  x = 1;
+  int z;
+  return x * y;
+}

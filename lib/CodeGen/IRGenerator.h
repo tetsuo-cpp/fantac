@@ -11,16 +11,19 @@ namespace fantac::codegen {
 class IRGenerator : public ast::IASTVisitor {
 public:
   IRGenerator();
-  virtual ~IRGenerator() = default;
+  virtual ~IRGenerator();
 
   // IASTVisitor impl.
   virtual void visit(ast::FunctionDecl *AST) override;
   virtual void visit(ast::FunctionDef *AST) override;
+  virtual void visit(ast::VariableDecl *AST) override;
 
 private:
   llvm::LLVMContext Context;
   llvm::IRBuilder<> Builder;
   llvm::Module Module;
+
+  std::map<std::string, llvm::Function *> Functions;
 };
 
 } // namespace fantac::codegen

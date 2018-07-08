@@ -31,6 +31,10 @@ private:
 
   ast::ASTPtr parseStatement();
 
+  bool isVarDecl() const;
+
+  ast::ASTPtr parseVarDecl();
+
   const std::vector<Token> &Tokens;
   std::vector<ast::ASTPtr> AST;
   std::vector<Token>::const_iterator TokenIter;

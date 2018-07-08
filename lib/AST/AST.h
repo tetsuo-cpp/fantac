@@ -8,6 +8,7 @@ namespace fantac::ast {
 // Fwd declare all AST nodes.
 struct FunctionDecl;
 struct FunctionDef;
+struct VariableDecl;
 
 // Visitor interface for walking the AST.
 class IASTVisitor {
@@ -16,6 +17,7 @@ public:
 
   virtual void visit(FunctionDecl *AST) = 0;
   virtual void visit(FunctionDef *AST) = 0;
+  virtual void visit(VariableDecl *AST) = 0;
 };
 
 // Base class for all AST nodes.
@@ -34,7 +36,8 @@ enum class ValueKind {
   VK_ULong,
   VK_Float,
   VK_Double,
-  VK_Char
+  VK_Char,
+  VK_None
 };
 
 struct FunctionDecl : public IAST {
@@ -75,12 +78,28 @@ struct FunctionDef : public IAST {
   const std::vector<ASTPtr> Body;
 };
 
+struct VariableDecl : public IAST {
+  template <typename TName>
+  VariableDecl(ValueKind Type, TName &&Name)
+      : Type(Type), Name(std::forward<TName>(Name)) {}
+
+  // IAST impl.
+  virtual void accept(IASTVisitor *Visitor) override { Visitor->visit(this); }
+
+  template <typename TStream>
+  friend TStream &operator<<(TStream &Stream, const VariableDecl &V);
+
+  const ValueKind Type;
+  const std::string Name;
+  ast::ASTPtr ValueExpr;
+};
+
 template <typename TStream>
 TStream &operator<<(TStream &Stream, const FunctionDecl &F) {
   Stream << "{Name=" << F.Name << ", Args=(";
-  for (const auto &Args : F.Args) {
-    Stream << Args.first;
-    if (Args != F.Args.back()) {
+  for (const auto &Arg : F.Args) {
+    Stream << Arg.first;
+    if (&Arg != &F.Args.back()) {
       Stream << ", ";
     }
   }
@@ -91,7 +110,22 @@ TStream &operator<<(TStream &Stream, const FunctionDecl &F) {
 
 template <typename TStream>
 TStream &operator<<(TStream &Stream, const FunctionDef &F) {
-  Stream << *F.Decl;
+  Stream << "{Decl=" << *F.Decl << ", Body=(";
+  for (const auto &Instruction : F.Body) {
+    if (Instruction) {
+      // TODO: Big hack. Figure this out...
+      Stream << *static_cast<ast::VariableDecl *>(Instruction.get());
+    }
+  }
+
+  Stream << ")}";
+
+  return Stream;
+}
+
+template <typename TStream>
+TStream &operator<<(TStream &Stream, const VariableDecl &V) {
+  Stream << "{Name=" << V.Name << "}";
   return Stream;
 }
 

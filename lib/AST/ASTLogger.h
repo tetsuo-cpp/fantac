@@ -14,6 +14,7 @@ public:
   // IASTVisitor impl.
   virtual void visit(FunctionDecl *AST) override;
   virtual void visit(FunctionDef *AST) override;
+  virtual void visit(VariableDecl *AST) override;
 };
 
 inline void ASTLogger::visit(FunctionDecl *AST) {
@@ -24,6 +25,11 @@ inline void ASTLogger::visit(FunctionDecl *AST) {
 inline void ASTLogger::visit(FunctionDef *AST) {
   assert(AST);
   std::cout << "FunctionDef: " << *AST << ".\n";
+}
+
+inline void ASTLogger::visit(VariableDecl *AST) {
+  assert(AST);
+  std::cout << "VariableDecl: " << *AST << ".\n";
 }
 
 } // namespace fantac::ast
