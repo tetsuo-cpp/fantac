@@ -52,6 +52,21 @@ void IRGenerator::visit(ast::FunctionDef *AST) {
   llvm::verifyFunction(*F);
 }
 
-void IRGenerator::visit(ast::VariableDecl *AST) { static_cast<void>(AST); }
+void IRGenerator::visit(ast::VariableDecl *AST) {
+  auto *F = Builder.GetInsertBlock()->getParent();
+
+  llvm::Type *VariableType = llvm::Type::getInt32Ty(Context);
+  llvm::Value *InitialValue = llvm::ConstantInt::get(VariableType, 0);
+
+  auto *Alloca = createEntryBlockAlloca(F, AST->Name, VariableType);
+  Builder.CreateStore(InitialValue, Alloca);
+}
+
+llvm::AllocaInst *IRGenerator::createEntryBlockAlloca(
+    llvm::Function *F, const std::string &VariableName, llvm::Type *Type) {
+  llvm::IRBuilder<> B(&F->getEntryBlock(), F->getEntryBlock().begin());
+
+  return B.CreateAlloca(Type, nullptr, VariableName);
+}
 
 } // namespace fantac::codegen

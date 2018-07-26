@@ -25,6 +25,11 @@ inline void ASTLogger::visit(FunctionDecl *AST) {
 inline void ASTLogger::visit(FunctionDef *AST) {
   assert(AST);
   std::cout << "FunctionDef: " << *AST << ".\n";
+  for (const auto &Instruction : AST->Body) {
+    if (Instruction) {
+      Instruction->accept(this);
+    }
+  }
 }
 
 inline void ASTLogger::visit(VariableDecl *AST) {

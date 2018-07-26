@@ -16,23 +16,15 @@ public:
   const std::vector<ast::ASTPtr> &parse();
 
 private:
-  // Function to parse a top level expression of a source file.
   ast::ASTPtr parseTopLevelExpr();
-
-  // Helpers to check the current type of top level expression.
   std::vector<Token>::const_iterator isFunctionSig() const;
   bool isFunctionDecl() const;
   bool isFunctionDef() const;
-
-  // Helpers to parse each type of top level expression.
+  bool isVarDecl() const;
   std::unique_ptr<ast::FunctionDecl> parseFunctionSig();
   ast::ASTPtr parseFunctionDecl();
   ast::ASTPtr parseFunctionDef();
-
   ast::ASTPtr parseStatement();
-
-  bool isVarDecl() const;
-
   ast::ASTPtr parseVarDecl();
 
   const std::vector<Token> &Tokens;

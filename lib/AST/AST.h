@@ -110,16 +110,7 @@ TStream &operator<<(TStream &Stream, const FunctionDecl &F) {
 
 template <typename TStream>
 TStream &operator<<(TStream &Stream, const FunctionDef &F) {
-  Stream << "{Decl=" << *F.Decl << ", Body=(";
-  for (const auto &Instruction : F.Body) {
-    if (Instruction) {
-      // TODO: Big hack. Figure this out...
-      Stream << *static_cast<ast::VariableDecl *>(Instruction.get());
-    }
-  }
-
-  Stream << ")}";
-
+  Stream << "{Decl=" << *F.Decl << "}";
   return Stream;
 }
 

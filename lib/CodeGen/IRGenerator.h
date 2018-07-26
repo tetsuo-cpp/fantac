@@ -19,6 +19,10 @@ public:
   virtual void visit(ast::VariableDecl *AST) override;
 
 private:
+  llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *F,
+                                           const std::string &VariableName,
+                                           llvm::Type *Type);
+
   llvm::LLVMContext Context;
   llvm::IRBuilder<> Builder;
   llvm::Module Module;
