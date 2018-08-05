@@ -8,15 +8,12 @@ namespace fantac::parse {
 
 class Parser {
 public:
-  // TODO: Make ITokenLexer interface less nonsense and then accept it into the
-  // Parser ctor.
   Parser(const std::vector<Token> &Tokens);
   virtual ~Parser() = default;
 
-  const std::vector<ast::ASTPtr> &parse();
+  ast::ASTPtr parseTopLevelExpr();
 
 private:
-  ast::ASTPtr parseTopLevelExpr();
   std::vector<Token>::const_iterator isFunctionSig() const;
   bool isFunctionDecl() const;
   bool isFunctionDef() const;

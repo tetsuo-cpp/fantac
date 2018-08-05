@@ -16,7 +16,7 @@ public:
   void run(const std::string &FileName);
 
 private:
-  std::unique_ptr<parse::ITokenLexer> Lexer;
+  std::unique_ptr<parse::ILexer> Lexer;
   std::unique_ptr<parse::Parser> Parser;
   std::vector<std::unique_ptr<ast::IASTVisitor>> ASTVisitors;
 };

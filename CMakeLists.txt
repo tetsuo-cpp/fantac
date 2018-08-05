@@ -21,6 +21,7 @@ set(
   lib/CodeGen/IRGenerator.cpp
   lib/Compiler/FantaC.cpp
   lib/Parse/Parser.cpp
+  lib/Parse/Lexer.cpp
   src/main.cpp
   )
 

@@ -9,13 +9,11 @@ namespace fantac::parse {
 // Generic exception for parsing related errors.
 class ParseException : public std::runtime_error {
 public:
-  template <typename TString> ParseException(TString &&Error);
+  template <typename TString>
+  ParseException(TString &&Error)
+      : std::runtime_error(std::forward<TString>(Error)) {}
   virtual ~ParseException() = default;
 };
-
-template <typename TString>
-ParseException::ParseException(TString &&Error)
-    : std::runtime_error(std::forward<TString>(Error)) {}
 
 enum class TokenKind {
   // Literals.
@@ -31,23 +29,25 @@ enum class TokenKind {
 };
 
 struct Token {
-  template <typename TString>
-  Token(TokenKind Kind, TString &&Value)
-      : Kind(Kind), Value(std::forward<TString>(Value)) {}
-  explicit Token(TokenKind Kind) : Kind(Kind) {}
+  template <typename TString> void assign(TokenKind Kind, TString &&Value) {
+    this->Kind = Kind;
+    this->Value = std::forward<TString>(Value);
+  }
 
-  TokenKind Kind;
-  const std::string Value;
+  void assign(TokenKind Kind) {
+    this->Kind = Kind;
+    Value.clear();
+  }
+
+  TokenKind Kind = TokenKind::TK_EOF;
+  std::string Value;
 };
 
-class ITokenLexer {
+class ILexer {
 public:
-  virtual ~ITokenLexer() = default;
+  virtual ~ILexer() = default;
 
-  // TODO: Might be good to provide functions for getting the current token and
-  // peeking forward N tokens, etc. Just need to figure out what I need.
-  virtual void lex() = 0;
-  virtual const std::vector<Token> &getTokens() const = 0;
+  virtual bool lex(Token &Tok) = 0;
 };
 
 } // namespace fantac::parse

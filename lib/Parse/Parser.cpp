@@ -37,17 +37,7 @@ void enforceToken(TError &&Error, const Token *Token, TokenKind ExpectedKind,
 } // anonymous namespace
 
 Parser::Parser(const std::vector<Token> &Tokens)
-    : Tokens(Tokens), TokenIter(Tokens.begin()) {
-  static_cast<void>(this->Tokens);
-}
-
-const std::vector<ast::ASTPtr> &Parser::parse() {
-  while (auto TopLevelNode = parseTopLevelExpr()) {
-    AST.push_back(std::move(TopLevelNode));
-  }
-
-  return AST;
-}
+    : Tokens(Tokens), TokenIter(Tokens.begin()) {}
 
 ast::ASTPtr Parser::parseTopLevelExpr() {
   auto *Tok = &*TokenIter;
@@ -225,7 +215,6 @@ ast::ASTPtr Parser::parseVarDecl() {
   // Check whether its a semicolon or equals.
   Tok = &*TokenIter++;
 
-  // TODO: Figure out init later.
   if (Tok->Value != "=" && Tok->Value != ";") {
     throw ParseException("Parser: Expected either end of statement or "
                          "initialisation after variable declaration.");
