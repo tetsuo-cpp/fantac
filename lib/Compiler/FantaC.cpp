@@ -18,18 +18,9 @@ void FantaC::run(const std::string &FileName) {
                      std::istreambuf_iterator<char>());
 
   try {
+    // Construct parsing components.
     Lexer.reset(new parse::Lexer(&*Source.begin(), &*(Source.end() - 1)));
-
-    std::vector<parse::Token> Tokens;
-    parse::Token Token;
-    while (Lexer->lex(Token)) {
-      Tokens.push_back(Token);
-    }
-
-    Token.assign(parse::TokenKind::TK_EOF);
-    Tokens.push_back(Token);
-
-    Parser.reset(new parse::Parser(Tokens));
+    Parser.reset(new parse::Parser(*Lexer));
 
     // Parse into AST.
     std::vector<ast::ASTPtr> AST;

@@ -16,16 +16,36 @@ public:
 };
 
 enum class TokenKind {
-  // Literals.
-  TK_Number,
-  TK_Char,
-  TK_String,
-  // Var names, func names and keywords.
   TK_Identifier,
-  // Operators, braces, etc.
   TK_Symbol,
+  // Literals.
+  TK_NumberLiteral,
+  TK_CharLiteral,
+  TK_StringLiteral,
+  // Keywords.
+  TK_If,
+  TK_Else,
+  TK_Return,
+  // Symbols.
+  TK_OpenBrace,
+  TK_CloseBrace,
+  TK_OpenParen,
+  TK_CloseParen,
+  TK_Comma,
+  TK_Semicolon,
+  TK_Colon,
+  // Operators.
+  TK_Add,
+  TK_Subtract,
+  TK_Multiply,
+  TK_Divide,
+  // Comparators.
+  TK_LessThan,
+  TK_GreaterThan,
+  TK_Equals,
   // End of file.
-  TK_EOF
+  TK_EOF,
+  TK_None
 };
 
 struct Token {
@@ -39,7 +59,7 @@ struct Token {
     Value.clear();
   }
 
-  TokenKind Kind = TokenKind::TK_EOF;
+  TokenKind Kind = TokenKind::TK_None;
   std::string Value;
 };
 

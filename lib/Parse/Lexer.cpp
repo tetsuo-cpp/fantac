@@ -1,5 +1,6 @@
 #include "Lexer.h"
 
+#include <algorithm>
 #include <cassert>
 #include <iostream>
 
@@ -7,44 +8,48 @@ namespace fantac::parse {
 
 namespace {
 
-bool isSymbol(char Char) {
-  switch (Char) {
-  case '+':
-  case '-':
-  case '*':
-  case '/':
-  case '(':
-  case ')':
-  case '{':
-  case '}':
-  case ';':
-  case ':':
-  case '<':
-  case '>':
-  case '=':
-  case ',':
-    return true;
-  default:
-    return false;
+const std::vector<std::pair<char, TokenKind>> SymbolMappings = {
+    {'{', TokenKind::TK_OpenBrace},   {'}', TokenKind::TK_CloseBrace},
+    {'(', TokenKind::TK_OpenParen},   {')', TokenKind::TK_CloseParen},
+    {',', TokenKind::TK_Comma},       {';', TokenKind::TK_Semicolon},
+    {':', TokenKind::TK_Colon},       {'+', TokenKind::TK_Add},
+    {'-', TokenKind::TK_Subtract},    {'*', TokenKind::TK_Multiply},
+    {'/', TokenKind::TK_Divide},      {'<', TokenKind::TK_LessThan},
+    {'>', TokenKind::TK_GreaterThan}, {'=', TokenKind::TK_Equals}};
+
+std::pair<bool, TokenKind> isSymbol(char Char) {
+  const auto SymbolMappingIter =
+      std::find_if(SymbolMappings.begin(), SymbolMappings.end(),
+                   [Char](const std::pair<char, TokenKind> &SymbolPair) {
+                     return Char == SymbolPair.first;
+                   });
+
+  if (SymbolMappingIter == SymbolMappings.end()) {
+    return std::make_pair(false, TokenKind::TK_EOF);
   }
+
+  return std::make_pair(true, SymbolMappingIter->second);
 }
 
 } // namespace
 
 Lexer::Lexer(const char *Begin, const char *End)
-    : CurrentChar(*Begin), Current(Begin + 1), End(End) {}
+    : CurrentChar(*Begin), Current(Begin + 1), End(End) {
+  assert(Begin != End);
+}
 
 bool Lexer::lex(Token &Tok) {
-  if (!lexToken(Tok)) {
+  if (Current == End) {
+    Tok.assign(TokenKind::TK_EOF);
     return false;
   }
 
-  return Current != End;
+  return lexToken(Tok);
 }
 
 bool Lexer::lexToken(Token &Tok) {
   // Trim any leading whitespace.
-  while (isspace(CurrentChar)) {
+  while (std::isspace(CurrentChar)) {
     if (!readNextChar()) {
       std::cout << "Lexed EOF.\n";
       Tok.assign(TokenKind::TK_EOF);
@@ -52,19 +57,20 @@ bool Lexer::lexToken(Token &Tok) {
     }
   }
 
-  if (isalpha(CurrentChar)) {
+  if (std::isalpha(CurrentChar)) {
     lexIdentifier(Tok);
     return true;
   }
 
-  if (isdigit(CurrentChar)) {
+  if (std::isdigit(CurrentChar)) {
     lexNumber(Tok);
     return true;
   }
 
-  if (isSymbol(CurrentChar)) {
+  const auto Result = isSymbol(CurrentChar);
+  if (Result.first) {
     std::cout << "Lexed symbol with value " << CurrentChar << ".\n";
-    Tok.assign(TokenKind::TK_Symbol, std::string(1, CurrentChar));
+    Tok.assign(Result.second, std::string(1, CurrentChar));
     readNextChar();
     return true;
   }
@@ -72,8 +78,10 @@ bool Lexer::lexToken(Token &Tok) {
   switch (CurrentChar) {
   case '\'':
     lexChar(Tok);
+    break;
   case '\"':
     lexString(Tok);
+    break;
   default:
     throw ParseException("Lexer: Unknown token. Unable to lex.");
   }
@@ -84,8 +92,8 @@ bool Lexer::lexToken(Token &Tok) {
 
 void Lexer::lexIdentifier(Token &Tok) {
   std::string Identifier;
-  while (!isspace(CurrentChar) && !isSymbol(CurrentChar)) {
-    if (!isalpha(CurrentChar) && CurrentChar != '_') {
+  while (!std::isspace(CurrentChar) && !isSymbol(CurrentChar).first) {
+    if (!std::isalpha(CurrentChar) && CurrentChar != '_') {
       throw ParseException("Lexer: Encountered non alphabetical character "
                            "in identifier name.");
     }
@@ -102,8 +110,8 @@ void Lexer::lexIdentifier(Token &Tok) {
 
 void Lexer::lexNumber(Token &Tok) {
   std::string NumberLiteral;
-  while (!isspace(CurrentChar) && !isSymbol(CurrentChar)) {
-    if (!isdigit(CurrentChar)) {
+  while (!std::isspace(CurrentChar) && !isSymbol(CurrentChar).first) {
+    if (!std::isdigit(CurrentChar)) {
       throw ParseException(
           "Lexer: Encountered non numeric character in number.");
     }
@@ -115,7 +123,7 @@ void Lexer::lexNumber(Token &Tok) {
   }
 
   std::cout << "Lexed number with value " << NumberLiteral << ".\n";
-  Tok.assign(TokenKind::TK_Number, std::move(NumberLiteral));
+  Tok.assign(TokenKind::TK_NumberLiteral, std::move(NumberLiteral));
 }
 
 void Lexer::lexChar(Token &Tok) {
@@ -134,7 +142,7 @@ void Lexer::lexChar(Token &Tok) {
   }
 
   std::cout << "Lexed character with value " << CharLiteral << ".\n";
-  Tok.assign(TokenKind::TK_Char, std::move(CharLiteral));
+  Tok.assign(TokenKind::TK_CharLiteral, std::move(CharLiteral));
 }
 
 void Lexer::lexString(Token &Tok) {
@@ -157,7 +165,7 @@ void Lexer::lexString(Token &Tok) {
   assert(CurrentChar == '\"');
 
   std::cout << "Lexed string literal with value " << StringLiteral << ".\n";
-  Tok.assign(TokenKind::TK_String, std::move(StringLiteral));
+  Tok.assign(TokenKind::TK_StringLiteral, std::move(StringLiteral));
 }
 
 bool Lexer::readNextChar() {

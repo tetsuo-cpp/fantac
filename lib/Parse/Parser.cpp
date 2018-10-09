@@ -8,106 +8,148 @@ namespace fantac::parse {
 
 namespace {
 
-ast::ValueKind stringToValueKind(const std::string &Type) {
-  if (Type == "int") {
-    return ast::ValueKind::VK_Int;
-  } else if (Type == "long") {
-    return ast::ValueKind::VK_Long;
-  } else if (Type == "float") {
-    return ast::ValueKind::VK_Float;
-  } else if (Type == "double") {
-    return ast::ValueKind::VK_Double;
-  } else if (Type == "char") {
-    return ast::ValueKind::VK_Char;
-  } else {
-    return ast::ValueKind::VK_None;
-  }
-}
+const std::vector<std::pair<std::string, ast::CTypeKind>> CTypeMappings = {
+    {"int", ast::CTypeKind::CTK_Int},
+    {"long", ast::CTypeKind::CTK_Long},
+    {"float", ast::CTypeKind::CTK_Float},
+    {"double", ast::CTypeKind::CTK_Double},
+    {"char", ast::CTypeKind::CTK_Char}};
 
-template <typename TError>
-void enforceToken(TError &&Error, const Token *Token, TokenKind ExpectedKind,
-                  const std::string &ExpectedValue) {
-  if (Token && Token->Kind == ExpectedKind && Token->Value == ExpectedValue) {
-    return;
+ast::CTypeKind stringToCTypeKind(const std::string &Type) {
+  const auto CTypeMappingIter = std::find_if(
+      CTypeMappings.begin(), CTypeMappings.end(),
+      [&Type](const std::pair<std::string, ast::CTypeKind> &CTypePair) {
+        return Type == CTypePair.first;
+      });
+
+  if (CTypeMappingIter == CTypeMappings.end()) {
+    return ast::CTypeKind::CTK_None;
   }
 
-  throw ParseException(std::forward<TError>(Error));
+  return CTypeMappingIter->second;
 }
 
 } // anonymous namespace
 
-Parser::Parser(const std::vector<Token> &Tokens)
-    : Tokens(Tokens), TokenIter(Tokens.begin()) {}
+Parser::Parser(ILexer &Lexer) : Lexer(Lexer), CacheIndex(0) {}
 
 ast::ASTPtr Parser::parseTopLevelExpr() {
-  auto *Tok = &*TokenIter;
-  if (Tok->Kind == TokenKind::TK_EOF) {
-    return nullptr;
-  }
+  std::cout << "Parsing top level expr.\n";
+  resetCache();
+  clearCache();
 
   // Find out what top level expr we're currently looking at and then parse it.
   if (isFunctionDecl()) {
+    resetCache();
     std::cout << "Parsing function decl.\n";
     return parseFunctionDecl();
-  } else if (isFunctionDef()) {
+  }
+
+  resetCache();
+
+  if (isFunctionDef()) {
+    resetCache();
     std::cout << "Parsing function def.\n";
     return parseFunctionDef();
+  }
+
+  if (Tok.Kind == TokenKind::TK_EOF) {
+    return nullptr;
+  }
+
+  throw ParseException("Parser: Malformed top level expression.");
+}
+
+void Parser::readNextToken() {
+  if (!TokenCache.empty()) {
+    Tok = TokenCache.front();
+    TokenCache.pop_front();
+    return;
+  }
+
+  if (!Lexer.lex(Tok)) {
+    throw ParseException("Parser: Unexpected end of token stream.");
+  }
+}
+
+bool Parser::readAndCacheNextToken() {
+  if (CacheIndex < TokenCache.size()) {
+    Tok = TokenCache.at(CacheIndex++);
+    return true;
   } else {
-    throw ParseException("Parser: Malformed top level expression.");
+    if (!Lexer.lex(Tok)) {
+      return false;
+    }
+
+    TokenCache.push_back(Tok);
+    ++CacheIndex;
+    return true;
   }
 }
 
-std::vector<Token>::const_iterator Parser::isFunctionSig() const {
+void Parser::resetCache() { CacheIndex = 0; }
+
+void Parser::clearCache() { TokenCache.clear(); }
+
+void Parser::checkNextTokenKind(TokenKind Kind, const std::string &Error) {
+  readNextToken();
+  if (Tok.Kind != Kind) {
+    throw ParseException(Error);
+  }
+}
+
+bool Parser::checkNextCachedTokenKind(TokenKind Kind) {
+  if (!readAndCacheNextToken()) {
+    return false;
+  }
+
+  return Tok.Kind == Kind;
+}
+
+bool Parser::isFunctionSig() {
   // Return type should be identifier.
-  auto *Tok = &*TokenIter;
-  if (Tok->Kind != TokenKind::TK_Identifier) {
-    return Tokens.end();
+  if (!checkNextCachedTokenKind(TokenKind::TK_Identifier)) {
+    return false;
   }
 
-  // Func name should be identifier.
-  Tok = &*(TokenIter + 1);
-  if (Tok->Kind != TokenKind::TK_Identifier) {
-    return Tokens.end();
+  if (!checkNextCachedTokenKind(TokenKind::TK_Identifier)) {
+    return false;
   }
 
-  Tok = &*(TokenIter + 2);
-  if (Tok->Kind != TokenKind::TK_Symbol || Tok->Value != "(") {
-    return Tokens.end();
+  if (!checkNextCachedTokenKind(TokenKind::TK_OpenParen)) {
+    return false;
   }
 
-  // Check that there's a close bracket after the args.
-  auto ArgEndIter =
-      std::find_if(TokenIter + 2, Tokens.end(), [](const Token &Tok) {
-        return Tok.Kind == TokenKind::TK_Symbol && Tok.Value == ")";
-      });
+  while (readAndCacheNextToken() && Tok.Kind != TokenKind::TK_CloseParen) {
+  }
 
-  return ArgEndIter;
+  if (Tok.Kind == TokenKind::TK_CloseParen) {
+    return true;
+  }
+
+  return false;
 }
 
-bool Parser::isFunctionDecl() const {
-  auto FunctionSigIter = isFunctionSig();
-  if (FunctionSigIter == Tokens.end()) {
+bool Parser::isFunctionDecl() {
+  if (!isFunctionSig()) {
     return false;
   }
 
   // Expecting semicolon (as opposed to open brace).
-  auto *Tok = &*(FunctionSigIter + 1);
-  if (Tok->Kind != TokenKind::TK_Symbol || Tok->Value != ";") {
+  if (!checkNextCachedTokenKind(TokenKind::TK_Semicolon)) {
     return false;
   }
 
   return true;
 }
 
-bool Parser::isFunctionDef() const {
-  auto FunctionSigIter = isFunctionSig();
-  if (FunctionSigIter == Tokens.end()) {
+bool Parser::isFunctionDef() {
+  if (!isFunctionSig()) {
     return false;
   }
 
   // Expecting open brace (as opposed to semicolon).
-  auto *Tok = &*(FunctionSigIter + 1);
-  if (Tok->Kind != TokenKind::TK_Symbol || Tok->Value != "{") {
+  if (!checkNextCachedTokenKind(TokenKind::TK_OpenBrace)) {
     return false;
   }
 
@@ -115,38 +157,39 @@ bool Parser::isFunctionDef() const {
 }
 
 std::unique_ptr<ast::FunctionDecl> Parser::parseFunctionSig() {
-  auto *Tok = &*TokenIter++;
-
   // Parse return type.
-  auto Return = stringToValueKind(Tok->Value);
+  readNextToken();
+  auto Return = stringToCTypeKind(Tok.Value);
+  if (Return == ast::CTypeKind::CTK_None) {
+    throw ParseException("Parser: Unrecognised type " + Tok.Value);
+  }
 
   // Parse name.
-  Tok = &*TokenIter++;
-  assert(Tok->Kind == TokenKind::TK_Identifier);
-  auto Name = Tok->Value;
+  readNextToken();
+  assert(Tok.Kind == TokenKind::TK_Identifier);
+  auto Name = Tok.Value;
 
   // Parse args.
-  std::vector<std::pair<std::string, ast::ValueKind>> Args;
+  std::vector<std::pair<std::string, ast::CTypeKind>> Args;
 
-  Tok = &*TokenIter++;
-  enforceToken("Parser: Was expecting beginning of argument list.", Tok,
-               TokenKind::TK_Symbol, "(");
+  checkNextTokenKind(TokenKind::TK_OpenParen,
+                     "Parser: Was expecting beginning of argument list.");
 
   // End of args list.
-  while (Tok->Value != ")") {
+  while (Tok.Kind != TokenKind::TK_CloseParen) {
     // Arg type.
-    Tok = &*TokenIter++;
-    auto Type = stringToValueKind(Tok->Value);
+    readNextToken();
+    auto Type = stringToCTypeKind(Tok.Value);
 
     // Arg name.
-    Tok = &*TokenIter++;
-    auto ArgName = Tok->Value;
+    readNextToken();
+    auto ArgName = Tok.Value;
 
     // Add arg.
     Args.emplace_back(std::move(ArgName), Type);
 
     // Either a close bracket or a comma.
-    Tok = &*TokenIter++;
+    readNextToken();
   }
 
   return std::make_unique<ast::FunctionDecl>(std::move(Name), Return,
@@ -156,9 +199,9 @@ std::unique_ptr<ast::FunctionDecl> Parser::parseFunctionSig() {
 ast::ASTPtr Parser::parseFunctionDecl() {
   auto Decl = parseFunctionSig();
 
-  auto *Tok = &*TokenIter++;
-  enforceToken("Parser: Expected semicolon at end of function declaration.",
-               Tok, TokenKind::TK_Symbol, ";");
+  checkNextTokenKind(
+      TokenKind::TK_Semicolon,
+      "Parser: Expected semicolon at end of function declaration.");
 
   return Decl;
 }
@@ -166,18 +209,15 @@ ast::ASTPtr Parser::parseFunctionDecl() {
 ast::ASTPtr Parser::parseFunctionDef() {
   auto Decl = parseFunctionSig();
 
-  auto *Tok = &*TokenIter++;
-  enforceToken("Parser: Expected open brace after function signature.", Tok,
-               TokenKind::TK_Symbol, "{");
+  checkNextTokenKind(TokenKind::TK_OpenBrace,
+                     "Parser: Expected open brace after function signature.");
 
-  Tok = &*TokenIter;
+  readAndCacheNextToken();
   std::vector<ast::ASTPtr> Body;
-  while (Tok->Value != "}") {
+  while (Tok.Kind != TokenKind::TK_CloseBrace) {
     Body.push_back(parseStatement());
-    Tok = &*++TokenIter;
+    readAndCacheNextToken();
   }
-
-  ++TokenIter;
 
   return std::make_unique<ast::FunctionDef>(std::move(Decl), std::move(Body));
 }
@@ -188,41 +228,46 @@ ast::ASTPtr Parser::parseStatement() {
     return parseVarDecl();
   } else {
     // Placeholder to skip over statements.
-    TokenIter = std::find_if(TokenIter, Tokens.end(),
-                             [](const Token &Tok) { return Tok.Value == ";"; });
+    while (Tok.Kind != TokenKind::TK_Semicolon) {
+      readNextToken();
+    }
   }
 
   return nullptr;
 }
 
-bool Parser::isVarDecl() const {
-  const auto &Tok = *TokenIter;
+bool Parser::isVarDecl() {
+  if (!readAndCacheNextToken()) {
+    return false;
+  }
+
   return Tok.Kind == TokenKind::TK_Identifier &&
-         stringToValueKind(Tok.Value) != ast::ValueKind::VK_None;
+         stringToCTypeKind(Tok.Value) != ast::CTypeKind::CTK_None;
 }
 
 ast::ASTPtr Parser::parseVarDecl() {
   // Get type.
-  auto *Tok = &*TokenIter++;
-  ast::ValueKind Type = stringToValueKind(Tok->Value);
+  readNextToken();
+  ast::CTypeKind Type = stringToCTypeKind(Tok.Value);
 
   // Get name.
-  Tok = &*TokenIter++;
-  std::string Name = Tok->Value;
+  readNextToken();
+  std::string Name = Tok.Value;
 
   auto Var = std::make_unique<ast::VariableDecl>(Type, std::move(Name));
 
   // Check whether its a semicolon or equals.
-  Tok = &*TokenIter++;
-
-  if (Tok->Value != "=" && Tok->Value != ";") {
+  readNextToken();
+  if (Tok.Kind != TokenKind::TK_Equals && Tok.Kind != TokenKind::TK_Semicolon) {
     throw ParseException("Parser: Expected either end of statement or "
                          "initialisation after variable declaration.");
   }
 
-  if (Tok->Value == "=") {
-    TokenIter = std::find_if(TokenIter, Tokens.end(),
-                             [](const Token &Tok) { return Tok.Value == ";"; });
+  if (Tok.Kind == TokenKind::TK_Equals) {
+    // Placeholder to skip over the assignment.
+    while (Tok.Kind != TokenKind::TK_Semicolon) {
+      readNextToken();
+    }
   }
 
   return Var;

@@ -29,20 +29,18 @@ struct IAST {
 
 using ASTPtr = std::unique_ptr<IAST>;
 
-enum class ValueKind {
-  VK_Int,
-  VK_UInt,
-  VK_Long,
-  VK_ULong,
-  VK_Float,
-  VK_Double,
-  VK_Char,
-  VK_None
+enum class CTypeKind {
+  CTK_Int,
+  CTK_Long,
+  CTK_Float,
+  CTK_Double,
+  CTK_Char,
+  CTK_None
 };
 
 struct FunctionDecl : public IAST {
   template <typename TName, typename TArgs>
-  FunctionDecl(TName &&Name, ValueKind Return, TArgs &&Args)
+  FunctionDecl(TName &&Name, CTypeKind Return, TArgs &&Args)
       : Name(std::forward<TName>(Name)), Return(Return),
         Args(std::forward<TArgs>(Args)) {}
 
@@ -53,8 +51,8 @@ struct FunctionDecl : public IAST {
   friend TStream &operator<<(TStream &Stream, const FunctionDecl &F);
 
   const std::string Name;
-  ValueKind Return;
-  const std::vector<std::pair<std::string, ValueKind>> Args;
+  CTypeKind Return;
+  const std::vector<std::pair<std::string, CTypeKind>> Args;
 };
 
 struct FunctionDef : public IAST {
@@ -62,7 +60,7 @@ struct FunctionDef : public IAST {
       : Decl(std::move(Decl)), Body(std::move(Body)) {}
 
   template <typename TName, typename TArgs>
-  FunctionDef(TName &&Name, ValueKind Return, TArgs &&Args,
+  FunctionDef(TName &&Name, CTypeKind Return, TArgs &&Args,
               std::vector<ASTPtr> &&Body)
       : Decl(new FunctionDecl(std::forward<TName>(Name), Return,
                               std::forward<TArgs>(Args))),
@@ -80,7 +78,7 @@ struct FunctionDef : public IAST {
 
 struct VariableDecl : public IAST {
   template <typename TName>
-  VariableDecl(ValueKind Type, TName &&Name)
+  VariableDecl(CTypeKind Type, TName &&Name)
       : Type(Type), Name(std::forward<TName>(Name)) {}
 
   // IAST impl.
@@ -89,7 +87,7 @@ struct VariableDecl : public IAST {
   template <typename TStream>
   friend TStream &operator<<(TStream &Stream, const VariableDecl &V);
 
-  const ValueKind Type;
+  const CTypeKind Type;
   const std::string Name;
   ast::ASTPtr ValueExpr;
 };
