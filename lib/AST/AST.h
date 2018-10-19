@@ -15,16 +15,16 @@ class IASTVisitor {
 public:
   virtual ~IASTVisitor() = default;
 
-  virtual void visit(FunctionDecl *AST) = 0;
-  virtual void visit(FunctionDef *AST) = 0;
-  virtual void visit(VariableDecl *AST) = 0;
+  virtual void visit(FunctionDecl &AST) = 0;
+  virtual void visit(FunctionDef &AST) = 0;
+  virtual void visit(VariableDecl &AST) = 0;
 };
 
 // Base class for all AST nodes.
 struct IAST {
   virtual ~IAST() = default;
 
-  virtual void accept(IASTVisitor *Visitor) = 0;
+  virtual void accept(IASTVisitor &Visitor) = 0;
 };
 
 using ASTPtr = std::unique_ptr<IAST>;
@@ -45,7 +45,7 @@ struct FunctionDecl : public IAST {
         Args(std::forward<TArgs>(Args)) {}
 
   // IAST impl.
-  virtual void accept(IASTVisitor *Visitor) override { Visitor->visit(this); }
+  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename TStream>
   friend TStream &operator<<(TStream &Stream, const FunctionDecl &F);
@@ -67,7 +67,7 @@ struct FunctionDef : public IAST {
         Body(std::move(Body)) {}
 
   // IAST impl.
-  virtual void accept(IASTVisitor *Visitor) override { Visitor->visit(this); }
+  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename TStream>
   friend TStream &operator<<(TStream &Stream, const FunctionDef &F);
@@ -82,7 +82,7 @@ struct VariableDecl : public IAST {
       : Type(Type), Name(std::forward<TName>(Name)) {}
 
   // IAST impl.
-  virtual void accept(IASTVisitor *Visitor) override { Visitor->visit(this); }
+  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename TStream>
   friend TStream &operator<<(TStream &Stream, const VariableDecl &V);

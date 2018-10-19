@@ -38,7 +38,7 @@ void FantaC::run(const std::string &FileName) {
     // Walk AST and generate LLVM IR.
     for (auto &ASTNode : AST) {
       for (auto &ASTVisitor : ASTVisitors) {
-        ASTNode->accept(ASTVisitor.get());
+        ASTNode->accept(*ASTVisitor);
       }
     }
   } catch (const parse::ParseException &Error) {

@@ -14,9 +14,9 @@ public:
   virtual ~IRGenerator();
 
   // IASTVisitor impl.
-  virtual void visit(ast::FunctionDecl *AST) override;
-  virtual void visit(ast::FunctionDef *AST) override;
-  virtual void visit(ast::VariableDecl *AST) override;
+  virtual void visit(ast::FunctionDecl &AST) override;
+  virtual void visit(ast::FunctionDef &AST) override;
+  virtual void visit(ast::VariableDecl &AST) override;
 
 private:
   llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *F,
