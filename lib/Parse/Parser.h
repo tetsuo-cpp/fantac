@@ -3,6 +3,7 @@
 #include "ParseInterfaces.h"
 
 #include <AST/AST.h>
+#include <Util/LoggerFactory.h>
 
 #include <deque>
 
@@ -10,7 +11,7 @@ namespace fantac::parse {
 
 class Parser {
 public:
-  Parser(ILexer &Lexer);
+  Parser(ILexer &Lexer, util::LoggerFactory &LF);
   virtual ~Parser() = default;
 
   ast::ASTPtr parseTopLevelExpr();
@@ -36,6 +37,7 @@ private:
   Token Tok;
   std::deque<Token> TokenCache;
   unsigned int CacheIndex;
+  spdlog::logger Logger;
 };
 
 } // namespace fantac::parse

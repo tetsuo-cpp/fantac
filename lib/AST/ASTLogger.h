@@ -2,29 +2,37 @@
 
 #include "AST.h"
 
+#include <Util/LoggerFactory.h>
+
 #include <cassert>
-#include <iostream>
 
 namespace fantac::ast {
 
 class ASTLogger : public IASTVisitor {
 public:
+  ASTLogger(util::LoggerFactory &LF);
   virtual ~ASTLogger() = default;
 
   // IASTVisitor impl.
   virtual void visit(FunctionDecl *AST) override;
   virtual void visit(FunctionDef *AST) override;
   virtual void visit(VariableDecl *AST) override;
+
+private:
+  spdlog::logger Logger;
 };
+
+ASTLogger::ASTLogger(util::LoggerFactory &LF)
+    : Logger(LF.createLogger("ASTLogger")) {}
 
 inline void ASTLogger::visit(FunctionDecl *AST) {
   assert(AST);
-  std::cout << "FunctionDecl: " << *AST << ".\n";
+  Logger.info("FunctionDecl: {}", *AST);
 }
 
 inline void ASTLogger::visit(FunctionDef *AST) {
   assert(AST);
-  std::cout << "FunctionDef: " << *AST << ".\n";
+  Logger.info("FunctionDef: {}", *AST);
   for (const auto &Instruction : AST->Body) {
     if (Instruction) {
       Instruction->accept(this);
@@ -34,7 +42,7 @@ inline void ASTLogger::visit(FunctionDef *AST) {
 
 inline void ASTLogger::visit(VariableDecl *AST) {
   assert(AST);
-  std::cout << "VariableDecl: " << *AST << ".\n";
+  Logger.info("VariableDecl: {}", *AST);
 }
 
 } // namespace fantac::ast

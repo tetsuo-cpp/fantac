@@ -15,6 +15,12 @@ add_definitions(${LLVM_DEFINITIONS})
 set(LLVM_LINK_LLVM_DYLIB ON)
 set(llvm_libs LLVM)
 
+# Setup spdlog.
+add_subdirectory(
+  "${PROJECT_SOURCE_DIR}/external/spdlog"
+  "external/spdlog"
+  )
+
 # Build compiler binary.
 set(
   FANTAC_FILES
@@ -28,4 +34,5 @@ set(
 add_executable(fantac ${FANTAC_FILES})
 
 target_link_libraries(fantac ${llvm_libs})
+target_link_libraries(fantac spdlog)
 target_include_directories(fantac PRIVATE lib)

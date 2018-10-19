@@ -2,11 +2,13 @@
 
 #include "ParseInterfaces.h"
 
+#include <Util/LoggerFactory.h>
+
 namespace fantac::parse {
 
 class Lexer : public ILexer {
 public:
-  Lexer(const char *Begin, const char *End);
+  Lexer(const char *Begin, const char *End, util::LoggerFactory &LF);
   virtual ~Lexer() = default;
 
   virtual bool lex(Token &Token) override;
@@ -21,6 +23,7 @@ private:
 
   char CurrentChar;
   const char *Current, *End;
+  spdlog::logger Logger;
 };
 
 } // namespace fantac::parse

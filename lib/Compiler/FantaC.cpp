@@ -9,8 +9,11 @@
 namespace fantac {
 
 void FantaC::run(const std::string &FileName) {
+  // Construct logger.
+  auto Logger = LF.createLogger("FantaC");
+
   // Setup the visitors we want.
-  ASTVisitors.push_back(std::make_unique<ast::ASTLogger>());
+  ASTVisitors.push_back(std::make_unique<ast::ASTLogger>(LF));
   ASTVisitors.push_back(std::make_unique<codegen::IRGenerator>());
 
   std::ifstream File(FileName);
@@ -19,14 +22,18 @@ void FantaC::run(const std::string &FileName) {
 
   try {
     // Construct parsing components.
-    Lexer.reset(new parse::Lexer(&*Source.begin(), &*(Source.end() - 1)));
-    Parser.reset(new parse::Parser(*Lexer));
+    Lexer.reset(new parse::Lexer(&*Source.begin(), &*(Source.end() - 1), LF));
+    Parser.reset(new parse::Parser(*Lexer, LF));
+
+    Logger.info("Parsing to AST.");
 
     // Parse into AST.
     std::vector<ast::ASTPtr> AST;
     while (auto Node = Parser->parseTopLevelExpr()) {
       AST.push_back(std::move(Node));
     }
+
+    Logger.info("Walking AST.");
 
     // Walk AST and generate LLVM IR.
     for (auto &ASTNode : AST) {
@@ -35,7 +42,8 @@ void FantaC::run(const std::string &FileName) {
       }
     }
   } catch (const parse::ParseException &Error) {
-    std::cerr << Error.what() << "\n";
+    Logger.error("Caught ParseException: {}. Terminating compilation.",
+                 Error.what());
   }
 }
 

@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <iostream>
 
 namespace fantac::parse {
 
@@ -31,17 +30,18 @@ ast::CTypeKind stringToCTypeKind(const std::string &Type) {
 
 } // anonymous namespace
 
-Parser::Parser(ILexer &Lexer) : Lexer(Lexer), CacheIndex(0) {}
+Parser::Parser(ILexer &Lexer, util::LoggerFactory &LF)
+    : Lexer(Lexer), CacheIndex(0), Logger(LF.createLogger("Parser")) {}
 
 ast::ASTPtr Parser::parseTopLevelExpr() {
-  std::cout << "Parsing top level expr.\n";
+  Logger.info("Parsing top level expr.");
   resetCache();
   clearCache();
 
   // Find out what top level expr we're currently looking at and then parse it.
   if (isFunctionDecl()) {
     resetCache();
-    std::cout << "Parsing function decl.\n";
+    Logger.info("Parsing function decl.");
     return parseFunctionDecl();
   }
 
@@ -49,7 +49,7 @@ ast::ASTPtr Parser::parseTopLevelExpr() {
 
   if (isFunctionDef()) {
     resetCache();
-    std::cout << "Parsing function def.\n";
+    Logger.info("Parsing function def.");
     return parseFunctionDef();
   }
 
@@ -57,7 +57,9 @@ ast::ASTPtr Parser::parseTopLevelExpr() {
     return nullptr;
   }
 
-  throw ParseException("Parser: Malformed top level expression.");
+  std::string Error("Malformed top level expression.");
+  Logger.error(Error);
+  throw ParseException(std::move(Error));
 }
 
 void Parser::readNextToken() {
@@ -68,7 +70,9 @@ void Parser::readNextToken() {
   }
 
   if (!Lexer.lex(Tok)) {
-    throw ParseException("Parser: Unexpected end of token stream.");
+    std::string Error("Unexpected end of token stream.");
+    Logger.error(Error);
+    throw ParseException(std::move(Error));
   }
 }
 
@@ -112,6 +116,7 @@ bool Parser::isFunctionSig() {
     return false;
   }
 
+  // Func name should be identifier.
   if (!checkNextCachedTokenKind(TokenKind::TK_Identifier)) {
     return false;
   }
@@ -120,6 +125,7 @@ bool Parser::isFunctionSig() {
     return false;
   }
 
+  // Check there's a close bracket after the args.
   while (readAndCacheNextToken() && Tok.Kind != TokenKind::TK_CloseParen) {
   }
 
@@ -161,7 +167,9 @@ std::unique_ptr<ast::FunctionDecl> Parser::parseFunctionSig() {
   readNextToken();
   auto Return = stringToCTypeKind(Tok.Value);
   if (Return == ast::CTypeKind::CTK_None) {
-    throw ParseException("Parser: Unrecognised type " + Tok.Value);
+    std::string Error(fmt::format("Unrecognised type {}.", Tok.Value));
+    Logger.error(Error);
+    throw ParseException(std::move(Error));
   }
 
   // Parse name.
@@ -173,7 +181,7 @@ std::unique_ptr<ast::FunctionDecl> Parser::parseFunctionSig() {
   std::vector<std::pair<std::string, ast::CTypeKind>> Args;
 
   checkNextTokenKind(TokenKind::TK_OpenParen,
-                     "Parser: Was expecting beginning of argument list.");
+                     "Was expecting beginning of argument list.");
 
   // End of args list.
   while (Tok.Kind != TokenKind::TK_CloseParen) {
@@ -199,9 +207,8 @@ std::unique_ptr<ast::FunctionDecl> Parser::parseFunctionSig() {
 ast::ASTPtr Parser::parseFunctionDecl() {
   auto Decl = parseFunctionSig();
 
-  checkNextTokenKind(
-      TokenKind::TK_Semicolon,
-      "Parser: Expected semicolon at end of function declaration.");
+  checkNextTokenKind(TokenKind::TK_Semicolon,
+                     "Expected semicolon at end of function declaration.");
 
   return Decl;
 }
@@ -210,7 +217,7 @@ ast::ASTPtr Parser::parseFunctionDef() {
   auto Decl = parseFunctionSig();
 
   checkNextTokenKind(TokenKind::TK_OpenBrace,
-                     "Parser: Expected open brace after function signature.");
+                     "Expected open brace after function signature.");
 
   readAndCacheNextToken();
   std::vector<ast::ASTPtr> Body;
@@ -224,7 +231,7 @@ ast::ASTPtr Parser::parseFunctionDef() {
 
 ast::ASTPtr Parser::parseStatement() {
   if (isVarDecl()) {
-    std::cout << "Parsing variable decl.\n";
+    Logger.info("Parsing variable decl.");
     return parseVarDecl();
   } else {
     // Placeholder to skip over statements.
@@ -259,8 +266,10 @@ ast::ASTPtr Parser::parseVarDecl() {
   // Check whether its a semicolon or equals.
   readNextToken();
   if (Tok.Kind != TokenKind::TK_Equals && Tok.Kind != TokenKind::TK_Semicolon) {
-    throw ParseException("Parser: Expected either end of statement or "
-                         "initialisation after variable declaration.");
+    std::string Error("Expected either end of statement or initialisation "
+                      "after variable declaration");
+    Logger.error(Error);
+    throw ParseException(std::move(Error));
   }
 
   if (Tok.Kind == TokenKind::TK_Equals) {
