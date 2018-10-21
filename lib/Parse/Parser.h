@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ParseInterfaces.h"
+#include "TokenCache.h"
 
 #include <AST/AST.h>
 #include <Util/LoggerFactory.h>
@@ -17,10 +18,6 @@ public:
   ast::ASTPtr parseTopLevelExpr();
 
 private:
-  void readNextToken();
-  bool readAndCacheNextToken();
-  void resetCache();
-  void clearCache();
   void checkNextTokenKind(TokenKind Kind, const std::string &Error);
   bool checkNextCachedTokenKind(TokenKind Kind);
   bool isFunctionSig();
@@ -33,10 +30,7 @@ private:
   ast::ASTPtr parseStatement();
   ast::ASTPtr parseVarDecl();
 
-  ILexer &Lexer;
-  Token Tok;
-  std::deque<Token> TokenCache;
-  unsigned int CacheIndex;
+  TokenCache Cache;
   spdlog::logger &Logger;
 };
 

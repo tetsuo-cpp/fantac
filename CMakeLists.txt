@@ -26,8 +26,9 @@ set(
   FANTAC_FILES
   lib/CodeGen/IRGenerator.cpp
   lib/Compiler/FantaC.cpp
-  lib/Parse/Parser.cpp
   lib/Parse/Lexer.cpp
+  lib/Parse/Parser.cpp
+  lib/Parse/TokenCache.cpp
   src/main.cpp
   )
 

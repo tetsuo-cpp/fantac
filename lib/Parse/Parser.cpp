@@ -31,29 +31,29 @@ ast::CTypeKind stringToCTypeKind(const std::string &Type) {
 } // anonymous namespace
 
 Parser::Parser(ILexer &Lexer, util::LoggerFactory &LF)
-    : Lexer(Lexer), CacheIndex(0), Logger(LF.createLogger("Parser")) {}
+    : Cache(Lexer, LF), Logger(LF.createLogger("Parser")) {}
 
 ast::ASTPtr Parser::parseTopLevelExpr() {
   Logger.info("Parsing top level expression.");
-  resetCache();
-  clearCache();
+  Cache.resetCache();
+  Cache.clearCache();
 
   // Find out what top level expr we're currently looking at and then parse it.
   if (isFunctionDecl()) {
-    resetCache();
+    Cache.resetCache();
     Logger.info("Parsing function declaration.");
     return parseFunctionDecl();
   }
 
-  resetCache();
+  Cache.resetCache();
 
   if (isFunctionDef()) {
-    resetCache();
+    Cache.resetCache();
     Logger.info("Parsing function definition.");
     return parseFunctionDef();
   }
 
-  if (Tok.Kind == TokenKind::TK_EOF) {
+  if (Cache.getCurrentToken().Kind == TokenKind::TK_EOF) {
     return nullptr;
   }
 
@@ -62,52 +62,19 @@ ast::ASTPtr Parser::parseTopLevelExpr() {
   throw ParseException(std::move(Error));
 }
 
-void Parser::readNextToken() {
-  if (!TokenCache.empty()) {
-    Tok = TokenCache.front();
-    TokenCache.pop_front();
-    return;
-  }
-
-  if (!Lexer.lex(Tok)) {
-    std::string Error("Unexpected end of token stream.");
-    Logger.error(Error);
-    throw ParseException(std::move(Error));
-  }
-}
-
-bool Parser::readAndCacheNextToken() {
-  if (CacheIndex < TokenCache.size()) {
-    Tok = TokenCache.at(CacheIndex++);
-    return true;
-  } else {
-    if (!Lexer.lex(Tok)) {
-      return false;
-    }
-
-    TokenCache.push_back(Tok);
-    ++CacheIndex;
-    return true;
-  }
-}
-
-void Parser::resetCache() { CacheIndex = 0; }
-
-void Parser::clearCache() { TokenCache.clear(); }
-
 void Parser::checkNextTokenKind(TokenKind Kind, const std::string &Error) {
-  readNextToken();
-  if (Tok.Kind != Kind) {
+  Cache.readNextToken();
+  if (Cache.getCurrentToken().Kind != Kind) {
     throw ParseException(Error);
   }
 }
 
 bool Parser::checkNextCachedTokenKind(TokenKind Kind) {
-  if (!readAndCacheNextToken()) {
+  if (!Cache.readAndCacheNextToken()) {
     return false;
   }
 
-  return Tok.Kind == Kind;
+  return Cache.getCurrentToken().Kind == Kind;
 }
 
 bool Parser::isFunctionSig() {
@@ -116,36 +83,37 @@ bool Parser::isFunctionSig() {
   // Return type should be identifier.
   if (!checkNextCachedTokenKind(TokenKind::TK_Identifier)) {
     Logger.debug("Failed to find return type: {}. Not a function signature.",
-                 Tok.Value);
+                 Cache.getCurrentToken().Value);
     return false;
   }
 
   // Func name should be identifier.
   if (!checkNextCachedTokenKind(TokenKind::TK_Identifier)) {
     Logger.debug("Failed to find function name: {}. Not a function signature.",
-                 Tok.Value);
+                 Cache.getCurrentToken().Value);
     return false;
   }
 
   if (!checkNextCachedTokenKind(TokenKind::TK_OpenParen)) {
     Logger.debug("Failed to find open paren to indicate argument list: {}. Not "
                  "a function signature.",
-                 Tok.Value);
+                 Cache.getCurrentToken().Value);
     return false;
   }
 
   // Check there's a close bracket after the args.
-  while (readAndCacheNextToken() && Tok.Kind != TokenKind::TK_CloseParen) {
+  while (Cache.readAndCacheNextToken() &&
+         Cache.getCurrentToken().Kind != TokenKind::TK_CloseParen) {
   }
 
-  if (Tok.Kind == TokenKind::TK_CloseParen) {
+  if (Cache.getCurrentToken().Kind == TokenKind::TK_CloseParen) {
     Logger.info("Found a function signature.");
     return true;
   }
 
   Logger.debug("Failed to find close paren to indicate end of argument list: "
                "{}. Not a function signature.",
-               Tok.Value);
+               Cache.getCurrentToken().Value);
   return false;
 }
 
@@ -187,18 +155,19 @@ bool Parser::isFunctionDef() {
 
 std::unique_ptr<ast::FunctionDecl> Parser::parseFunctionSig() {
   // Parse return type.
-  readNextToken();
-  auto Return = stringToCTypeKind(Tok.Value);
+  Cache.readNextToken();
+  auto Return = stringToCTypeKind(Cache.getCurrentToken().Value);
   if (Return == ast::CTypeKind::CTK_None) {
-    std::string Error(fmt::format("Unrecognised type {}.", Tok.Value));
+    std::string Error(
+        fmt::format("Unrecognised type {}.", Cache.getCurrentToken().Value));
     Logger.error(Error);
     throw ParseException(std::move(Error));
   }
 
   // Parse name.
-  readNextToken();
-  assert(Tok.Kind == TokenKind::TK_Identifier);
-  auto Name = Tok.Value;
+  Cache.readNextToken();
+  assert(Cache.getCurrentToken().Kind == TokenKind::TK_Identifier);
+  auto Name = Cache.getCurrentToken().Value;
 
   // Parse args.
   std::vector<std::pair<std::string, ast::CTypeKind>> Args;
@@ -207,20 +176,20 @@ std::unique_ptr<ast::FunctionDecl> Parser::parseFunctionSig() {
                      "Was expecting beginning of argument list.");
 
   // End of args list.
-  while (Tok.Kind != TokenKind::TK_CloseParen) {
+  while (Cache.getCurrentToken().Kind != TokenKind::TK_CloseParen) {
     // Arg type.
-    readNextToken();
-    auto Type = stringToCTypeKind(Tok.Value);
+    Cache.readNextToken();
+    auto Type = stringToCTypeKind(Cache.getCurrentToken().Value);
 
     // Arg name.
-    readNextToken();
-    auto ArgName = Tok.Value;
+    Cache.readNextToken();
+    auto ArgName = Cache.getCurrentToken().Value;
 
     // Add arg.
     Args.emplace_back(std::move(ArgName), Type);
 
     // Either a close bracket or a comma.
-    readNextToken();
+    Cache.readNextToken();
   }
 
   return std::make_unique<ast::FunctionDecl>(std::move(Name), Return,
@@ -242,11 +211,11 @@ ast::ASTPtr Parser::parseFunctionDef() {
   checkNextTokenKind(TokenKind::TK_OpenBrace,
                      "Expected open brace after function signature.");
 
-  readAndCacheNextToken();
+  Cache.readAndCacheNextToken();
   std::vector<ast::ASTPtr> Body;
-  while (Tok.Kind != TokenKind::TK_CloseBrace) {
+  while (Cache.getCurrentToken().Kind != TokenKind::TK_CloseBrace) {
     Body.push_back(parseStatement());
-    readAndCacheNextToken();
+    Cache.readAndCacheNextToken();
   }
 
   return std::make_unique<ast::FunctionDef>(std::move(Decl), std::move(Body));
@@ -259,8 +228,8 @@ ast::ASTPtr Parser::parseStatement() {
   } else {
     // Placeholder to skip over statements.
     Logger.info("Skipping over statement.");
-    while (Tok.Kind != TokenKind::TK_Semicolon) {
-      readNextToken();
+    while (Cache.getCurrentToken().Kind != TokenKind::TK_Semicolon) {
+      Cache.readNextToken();
     }
   }
 
@@ -268,13 +237,14 @@ ast::ASTPtr Parser::parseStatement() {
 }
 
 bool Parser::isVarDecl() {
-  if (!readAndCacheNextToken()) {
+  if (!Cache.readAndCacheNextToken()) {
     Logger.debug("No cached tokens. Not a variable declaration.");
     return false;
   }
 
-  if (Tok.Kind == TokenKind::TK_Identifier &&
-      stringToCTypeKind(Tok.Value) != ast::CTypeKind::CTK_None) {
+  if (Cache.getCurrentToken().Kind == TokenKind::TK_Identifier &&
+      stringToCTypeKind(Cache.getCurrentToken().Value) !=
+          ast::CTypeKind::CTK_None) {
     Logger.info("Found a variable declaration.");
     return true;
   }
@@ -285,28 +255,29 @@ bool Parser::isVarDecl() {
 
 ast::ASTPtr Parser::parseVarDecl() {
   // Get type.
-  readNextToken();
-  ast::CTypeKind Type = stringToCTypeKind(Tok.Value);
+  Cache.readNextToken();
+  ast::CTypeKind Type = stringToCTypeKind(Cache.getCurrentToken().Value);
 
   // Get name.
-  readNextToken();
-  std::string Name = Tok.Value;
+  Cache.readNextToken();
+  std::string Name = Cache.getCurrentToken().Value;
 
   auto Var = std::make_unique<ast::VariableDecl>(Type, std::move(Name));
 
   // Check whether its a semicolon or equals.
-  readNextToken();
-  if (Tok.Kind != TokenKind::TK_Equals && Tok.Kind != TokenKind::TK_Semicolon) {
+  Cache.readNextToken();
+  if (Cache.getCurrentToken().Kind != TokenKind::TK_Equals &&
+      Cache.getCurrentToken().Kind != TokenKind::TK_Semicolon) {
     std::string Error("Expected either end of statement or initialisation "
                       "after variable declaration");
     Logger.error(Error);
     throw ParseException(std::move(Error));
   }
 
-  if (Tok.Kind == TokenKind::TK_Equals) {
+  if (Cache.getCurrentToken().Kind == TokenKind::TK_Equals) {
     // Placeholder to skip over the assignment.
-    while (Tok.Kind != TokenKind::TK_Semicolon) {
-      readNextToken();
+    while (Cache.getCurrentToken().Kind != TokenKind::TK_Semicolon) {
+      Cache.readNextToken();
     }
   }
 
