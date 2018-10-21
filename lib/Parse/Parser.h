@@ -37,7 +37,7 @@ private:
   Token Tok;
   std::deque<Token> TokenCache;
   unsigned int CacheIndex;
-  spdlog::logger Logger;
+  spdlog::logger &Logger;
 };
 
 } // namespace fantac::parse

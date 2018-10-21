@@ -4,11 +4,15 @@
 
 namespace fantac::codegen {
 
-IRGenerator::IRGenerator() : Builder(Context), Module("FantaC", Context) {}
+IRGenerator::IRGenerator(util::LoggerFactory &LF)
+    : Builder(Context), Module("FantaC", Context),
+      Logger(LF.createLogger("IRGenerator")) {}
 
 IRGenerator::~IRGenerator() { Module.print(llvm::errs(), nullptr); }
 
 void IRGenerator::visit(ast::FunctionDecl &AST) {
+  Logger.info("Generating IR for FunctionDecl.");
+
   std::vector<llvm::Type *> Args(AST.Args.size(),
                                  llvm::Type::getInt32Ty(Context));
 
@@ -27,6 +31,8 @@ void IRGenerator::visit(ast::FunctionDecl &AST) {
 }
 
 void IRGenerator::visit(ast::FunctionDef &AST) {
+  Logger.info("Generating IR for FunctionDef.");
+
   llvm::Function *F = nullptr;
   const auto &Name = AST.Decl->Name;
 
@@ -53,6 +59,8 @@ void IRGenerator::visit(ast::FunctionDef &AST) {
 }
 
 void IRGenerator::visit(ast::VariableDecl &AST) {
+  Logger.info("Generating IR for VariableDecl.");
+
   auto *F = Builder.GetInsertBlock()->getParent();
 
   llvm::Type *VariableType = llvm::Type::getInt32Ty(Context);

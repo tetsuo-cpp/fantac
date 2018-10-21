@@ -51,7 +51,7 @@ bool Lexer::lexToken(Token &Tok) {
   // Trim any leading whitespace.
   while (std::isspace(CurrentChar)) {
     if (!readNextChar()) {
-      Logger.info("Lexed EOF.");
+      Logger.info("Lexed EOF. Finished lexing.");
       Tok.assign(TokenKind::TK_EOF);
       return false;
     }
@@ -69,7 +69,7 @@ bool Lexer::lexToken(Token &Tok) {
 
   const auto Result = isSymbol(CurrentChar);
   if (Result.first) {
-    Logger.info("Lexed symbol with value {}.", CurrentChar);
+    Logger.debug("Lexed symbol with value {}.", CurrentChar);
     Tok.assign(Result.second, std::string(1, CurrentChar));
     readNextChar();
     return true;
@@ -108,7 +108,7 @@ void Lexer::lexIdentifier(Token &Tok) {
     }
   }
 
-  Logger.info("Lexed identifier with value {}.", Identifier);
+  Logger.debug("Lexed identifier with value {}.", Identifier);
   Tok.assign(TokenKind::TK_Identifier, std::move(Identifier));
 }
 
@@ -127,7 +127,7 @@ void Lexer::lexNumber(Token &Tok) {
     }
   }
 
-  Logger.info("Lexed number with value {}.", NumberLiteral);
+  Logger.debug("Lexed number with value {}.", NumberLiteral);
   Tok.assign(TokenKind::TK_NumberLiteral, std::move(NumberLiteral));
 }
 
@@ -149,7 +149,7 @@ void Lexer::lexChar(Token &Tok) {
     throw ParseException(std::move(Error));
   }
 
-  Logger.info("Lexed character with value {}.", CharLiteral);
+  Logger.debug("Lexed character with value {}.", CharLiteral);
   Tok.assign(TokenKind::TK_CharLiteral, std::move(CharLiteral));
 }
 
@@ -174,7 +174,7 @@ void Lexer::lexString(Token &Tok) {
 
   assert(CurrentChar == '\"');
 
-  Logger.info("Lexed string literal with value {}.", StringLiteral);
+  Logger.debug("Lexed string literal with value {}.", StringLiteral);
   Tok.assign(TokenKind::TK_StringLiteral, std::move(StringLiteral));
 }
 

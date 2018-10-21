@@ -19,18 +19,18 @@ public:
   virtual void visit(VariableDecl &AST) override;
 
 private:
-  spdlog::logger Logger;
+  spdlog::logger &Logger;
 };
 
 ASTLogger::ASTLogger(util::LoggerFactory &LF)
     : Logger(LF.createLogger("ASTLogger")) {}
 
 inline void ASTLogger::visit(FunctionDecl &AST) {
-  Logger.info("FunctionDecl: {}", AST);
+  Logger.info("FunctionDecl: {}.", AST);
 }
 
 inline void ASTLogger::visit(FunctionDef &AST) {
-  Logger.info("FunctionDef: {}", AST);
+  Logger.info("FunctionDef: {}.", AST);
   for (const auto &Instruction : AST.Body) {
     if (Instruction) {
       Instruction->accept(*this);
@@ -39,7 +39,7 @@ inline void ASTLogger::visit(FunctionDef &AST) {
 }
 
 inline void ASTLogger::visit(VariableDecl &AST) {
-  Logger.info("VariableDecl: {}", AST);
+  Logger.info("VariableDecl: {}.", AST);
 }
 
 } // namespace fantac::ast

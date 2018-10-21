@@ -34,14 +34,14 @@ Parser::Parser(ILexer &Lexer, util::LoggerFactory &LF)
     : Lexer(Lexer), CacheIndex(0), Logger(LF.createLogger("Parser")) {}
 
 ast::ASTPtr Parser::parseTopLevelExpr() {
-  Logger.info("Parsing top level expr.");
+  Logger.info("Parsing top level expression.");
   resetCache();
   clearCache();
 
   // Find out what top level expr we're currently looking at and then parse it.
   if (isFunctionDecl()) {
     resetCache();
-    Logger.info("Parsing function decl.");
+    Logger.info("Parsing function declaration.");
     return parseFunctionDecl();
   }
 
@@ -49,7 +49,7 @@ ast::ASTPtr Parser::parseTopLevelExpr() {
 
   if (isFunctionDef()) {
     resetCache();
-    Logger.info("Parsing function def.");
+    Logger.info("Parsing function definition.");
     return parseFunctionDef();
   }
 
@@ -111,17 +111,26 @@ bool Parser::checkNextCachedTokenKind(TokenKind Kind) {
 }
 
 bool Parser::isFunctionSig() {
+  Logger.debug("Checking for a function signature");
+
   // Return type should be identifier.
   if (!checkNextCachedTokenKind(TokenKind::TK_Identifier)) {
+    Logger.debug("Failed to find return type: {}. Not a function signature.",
+                 Tok.Value);
     return false;
   }
 
   // Func name should be identifier.
   if (!checkNextCachedTokenKind(TokenKind::TK_Identifier)) {
+    Logger.debug("Failed to find function name: {}. Not a function signature.",
+                 Tok.Value);
     return false;
   }
 
   if (!checkNextCachedTokenKind(TokenKind::TK_OpenParen)) {
+    Logger.debug("Failed to find open paren to indicate argument list: {}. Not "
+                 "a function signature.",
+                 Tok.Value);
     return false;
   }
 
@@ -130,35 +139,49 @@ bool Parser::isFunctionSig() {
   }
 
   if (Tok.Kind == TokenKind::TK_CloseParen) {
+    Logger.info("Found a function signature.");
     return true;
   }
 
+  Logger.debug("Failed to find close paren to indicate end of argument list: "
+               "{}. Not a function signature.",
+               Tok.Value);
   return false;
 }
 
 bool Parser::isFunctionDecl() {
   if (!isFunctionSig()) {
+    Logger.debug(
+        "Failed to find function signature. Not a function declaration.");
     return false;
   }
 
   // Expecting semicolon (as opposed to open brace).
   if (!checkNextCachedTokenKind(TokenKind::TK_Semicolon)) {
+    Logger.debug("Failed to find semicolon after function signature. Not a "
+                 "function declaration.");
     return false;
   }
 
+  Logger.info("Found a function declaration.");
   return true;
 }
 
 bool Parser::isFunctionDef() {
   if (!isFunctionSig()) {
+    Logger.debug(
+        "Failed to find a function signature. Not a function definition.");
     return false;
   }
 
   // Expecting open brace (as opposed to semicolon).
   if (!checkNextCachedTokenKind(TokenKind::TK_OpenBrace)) {
+    Logger.debug("Failed to find open brace after function signature. Not a "
+                 "function definition.");
     return false;
   }
 
+  Logger.info("Found a function definition.");
   return true;
 }
 
@@ -231,10 +254,11 @@ ast::ASTPtr Parser::parseFunctionDef() {
 
 ast::ASTPtr Parser::parseStatement() {
   if (isVarDecl()) {
-    Logger.info("Parsing variable decl.");
+    Logger.info("Parsing variable declaration.");
     return parseVarDecl();
   } else {
     // Placeholder to skip over statements.
+    Logger.info("Skipping over statement.");
     while (Tok.Kind != TokenKind::TK_Semicolon) {
       readNextToken();
     }
@@ -245,11 +269,18 @@ ast::ASTPtr Parser::parseStatement() {
 
 bool Parser::isVarDecl() {
   if (!readAndCacheNextToken()) {
+    Logger.debug("No cached tokens. Not a variable declaration.");
     return false;
   }
 
-  return Tok.Kind == TokenKind::TK_Identifier &&
-         stringToCTypeKind(Tok.Value) != ast::CTypeKind::CTK_None;
+  if (Tok.Kind == TokenKind::TK_Identifier &&
+      stringToCTypeKind(Tok.Value) != ast::CTypeKind::CTK_None) {
+    Logger.info("Found a variable declaration.");
+    return true;
+  }
+
+  Logger.debug("Leading token is not a type. Not a variable declaration.");
+  return false;
 }
 
 ast::ASTPtr Parser::parseVarDecl() {

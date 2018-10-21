@@ -23,7 +23,7 @@ private:
 
   char CurrentChar;
   const char *Current, *End;
-  spdlog::logger Logger;
+  spdlog::logger &Logger;
 };
 
 } // namespace fantac::parse

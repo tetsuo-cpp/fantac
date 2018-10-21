@@ -8,13 +8,15 @@
 
 namespace fantac {
 
+FantaC::FantaC() : LFConfig{spdlog::level::level_enum::debug}, LF(LFConfig) {}
+
 void FantaC::run(const std::string &FileName) {
   // Construct logger.
-  auto Logger = LF.createLogger("FantaC");
+  auto &Logger = LF.createLogger("FantaC");
 
   // Setup the visitors we want.
   ASTVisitors.push_back(std::make_unique<ast::ASTLogger>(LF));
-  ASTVisitors.push_back(std::make_unique<codegen::IRGenerator>());
+  ASTVisitors.push_back(std::make_unique<codegen::IRGenerator>(LF));
 
   std::ifstream File(FileName);
   std::string Source((std::istreambuf_iterator<char>(File)),
