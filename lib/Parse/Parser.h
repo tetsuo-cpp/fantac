@@ -1,12 +1,9 @@
 #pragma once
 
 #include "ParseInterfaces.h"
-#include "TokenCache.h"
 
 #include <AST/AST.h>
 #include <Util/LoggerFactory.h>
-
-#include <deque>
 
 namespace fantac::parse {
 
