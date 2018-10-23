@@ -39,7 +39,7 @@ Lexer::Lexer(const char *Begin, const char *End, util::LoggerFactory &LF)
 }
 
 bool Lexer::lex(Token &Tok) {
-  if (Current == End) {
+  if (Current >= End) {
     Tok.assign(TokenKind::TK_EOF);
     return false;
   }

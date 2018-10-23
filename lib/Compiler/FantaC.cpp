@@ -29,18 +29,10 @@ void FantaC::run(const std::string &FileName) {
 
     Logger.info("Parsing to AST.");
 
-    // Parse into AST.
-    std::vector<ast::ASTPtr> AST;
-    while (auto Node = Parser->parseTopLevelExpr()) {
-      AST.push_back(std::move(Node));
-    }
-
-    Logger.info("Walking AST.");
-
-    // Walk AST and generate LLVM IR.
-    for (auto &ASTNode : AST) {
+    // Parse into AST and generate LLVM IR.
+    while (auto AST = Parser->parseTopLevelExpr()) {
       for (auto &ASTVisitor : ASTVisitors) {
-        ASTNode->accept(*ASTVisitor);
+        AST->accept(*ASTVisitor);
       }
     }
   } catch (const parse::ParseException &Error) {

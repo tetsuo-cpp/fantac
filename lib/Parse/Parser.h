@@ -18,19 +18,15 @@ public:
   ast::ASTPtr parseTopLevelExpr();
 
 private:
-  void checkNextTokenKind(TokenKind Kind, const std::string &Error);
-  bool checkNextCachedTokenKind(TokenKind Kind);
-  bool isFunctionSig();
-  bool isFunctionDecl();
-  bool isFunctionDef();
-  bool isVarDecl();
-  std::unique_ptr<ast::FunctionDecl> parseFunctionSig();
-  ast::ASTPtr parseFunctionDecl();
-  ast::ASTPtr parseFunctionDef();
+  void readNextToken();
+  void expectToken(TokenKind ExpectedKind);
+  bool consumeToken(TokenKind ExpectedKind);
+  ast::ASTPtr parseFunction(ast::CTypeKind ReturnType,
+                            const std::string &FunctionName);
   ast::ASTPtr parseStatement();
-  ast::ASTPtr parseVarDecl();
 
-  TokenCache Cache;
+  ILexer &Lexer;
+  Token CurrentToken;
   spdlog::logger &Logger;
 };
 

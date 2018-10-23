@@ -51,7 +51,7 @@ struct FunctionDecl : public IAST {
   friend TStream &operator<<(TStream &Stream, const FunctionDecl &F);
 
   const std::string Name;
-  CTypeKind Return;
+  const CTypeKind Return;
   const std::vector<std::pair<std::string, CTypeKind>> Args;
 };
 
@@ -72,7 +72,7 @@ struct FunctionDef : public IAST {
   template <typename TStream>
   friend TStream &operator<<(TStream &Stream, const FunctionDef &F);
 
-  std::unique_ptr<FunctionDecl> Decl;
+  const std::unique_ptr<FunctionDecl> Decl;
   const std::vector<ASTPtr> Body;
 };
 
@@ -89,7 +89,7 @@ struct VariableDecl : public IAST {
 
   const CTypeKind Type;
   const std::string Name;
-  ast::ASTPtr ValueExpr;
+  const ast::ASTPtr ValueExpr;
 };
 
 template <typename TStream>
