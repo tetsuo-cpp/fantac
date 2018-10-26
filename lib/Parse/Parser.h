@@ -15,11 +15,9 @@ public:
   ast::ASTPtr parseTopLevelExpr();
 
 private:
-  void readNextToken();
-  void expectToken(TokenKind ExpectedKind);
-  bool consumeToken(TokenKind ExpectedKind);
-  ast::ASTPtr parseFunction(ast::CTypeKind ReturnType,
-                            const std::string &FunctionName);
+  bool consumeToken(TokenKind Kind);
+  void expectToken(TokenKind Kind);
+  ast::ASTPtr parseFunction(ast::CTypeKind Return, std::string &&Name);
   ast::ASTPtr parseStatement();
 
   ILexer &Lexer;

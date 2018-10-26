@@ -48,6 +48,65 @@ enum class TokenKind {
   TK_None
 };
 
+inline std::string tokenKindToString(TokenKind Kind) {
+  switch (Kind) {
+  case TokenKind::TK_Identifier:
+    return "Identifier";
+  case TokenKind::TK_Symbol:
+    return "Symbol";
+  case TokenKind::TK_NumberLiteral:
+    return "NumberLiteral";
+  case TokenKind::TK_CharLiteral:
+    return "CharLiteral";
+  case TokenKind::TK_StringLiteral:
+    return "StringLiteral";
+  case TokenKind::TK_If:
+    return "If";
+  case TokenKind::TK_Else:
+    return "Else";
+  case TokenKind::TK_Return:
+    return "Return";
+  case TokenKind::TK_OpenBrace:
+    return "OpenBrace";
+  case TokenKind::TK_CloseBrace:
+    return "CloseBrace";
+  case TokenKind::TK_OpenParen:
+    return "OpenParen";
+  case TokenKind::TK_CloseParen:
+    return "CloseParen";
+  case TokenKind::TK_Comma:
+    return "Comma";
+  case TokenKind::TK_Semicolon:
+    return "Semicolon";
+  case TokenKind::TK_Colon:
+    return "Colon";
+  case TokenKind::TK_Add:
+    return "Add";
+  case TokenKind::TK_Subtract:
+    return "Subtract";
+  case TokenKind::TK_Multiply:
+    return "Multiply";
+  case TokenKind::TK_Divide:
+    return "Divide";
+  case TokenKind::TK_LessThan:
+    return "LessThan";
+  case TokenKind::TK_GreaterThan:
+    return "GreaterThan";
+  case TokenKind::TK_Equals:
+    return "Equals";
+  case TokenKind::TK_EOF:
+    return "EOF";
+  case TokenKind::TK_None:
+  default:
+    return "None";
+  }
+}
+
+template <typename TStream>
+TStream &operator<<(TStream &Stream, TokenKind Kind) {
+  return Stream << tokenKindToString(Kind);
+}
+
 struct Token {
   template <typename TString> void assign(TokenKind Kind, TString &&Value) {
     this->Kind = Kind;

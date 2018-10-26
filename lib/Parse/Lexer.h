@@ -11,14 +11,14 @@ public:
   Lexer(const char *Begin, const char *End, util::LoggerFactory &LF);
   virtual ~Lexer() = default;
 
-  virtual bool lex(Token &Token) override;
+  virtual bool lex(Token &Tok) override;
 
 private:
-  bool lexToken(Token &Token);
-  void lexIdentifier(Token &Token);
-  void lexNumber(Token &Token);
-  void lexChar(Token &Token);
-  void lexString(Token &Token);
+  bool lexToken(Token &Tok);
+  void lexIdentifier(Token &Tok);
+  void lexNumber(Token &Tok);
+  void lexChar(Token &Tok);
+  void lexString(Token &Tok);
   bool readNextChar();
 
   char CurrentChar;

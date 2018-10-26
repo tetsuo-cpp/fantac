@@ -36,7 +36,7 @@ void FantaC::run(const std::string &FileName) {
       }
     }
   } catch (const parse::ParseException &Error) {
-    Logger.error("Caught ParseException: {}. Terminating compilation.",
+    Logger.error("Caught ParseException: \"{}\". Terminating compilation.",
                  Error.what());
   }
 }

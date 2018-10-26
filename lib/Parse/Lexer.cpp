@@ -24,7 +24,7 @@ std::pair<bool, TokenKind> isSymbol(char Char) {
                    });
 
   if (SymbolMappingIter == SymbolMappings.end()) {
-    return std::make_pair(false, TokenKind::TK_EOF);
+    return std::make_pair(false, TokenKind::TK_None);
   }
 
   return std::make_pair(true, SymbolMappingIter->second);
@@ -83,9 +83,7 @@ bool Lexer::lexToken(Token &Tok) {
     lexString(Tok);
     break;
   default:
-    std::string Error("Unknown token. Unable to lex.");
-    Logger.error(Error);
-    throw ParseException(std::move(Error));
+    throw ParseException("Unknown token. Unable to lex.");
   }
 
   readNextChar();
@@ -96,10 +94,8 @@ void Lexer::lexIdentifier(Token &Tok) {
   std::string Identifier;
   while (!std::isspace(CurrentChar) && !isSymbol(CurrentChar).first) {
     if (!std::isalpha(CurrentChar) && CurrentChar != '_') {
-      std::string Error(
+      throw ParseException(
           "Encountered non-alphabetical character in identifier name.");
-      Logger.error(Error);
-      throw ParseException(std::move(Error));
     }
 
     Identifier.push_back(CurrentChar);
@@ -116,9 +112,7 @@ void Lexer::lexNumber(Token &Tok) {
   std::string NumberLiteral;
   while (!std::isspace(CurrentChar) && !isSymbol(CurrentChar).first) {
     if (!std::isdigit(CurrentChar)) {
-      std::string Error("Encountered non-numeric character in number.");
-      Logger.error(Error);
-      throw ParseException(std::move(Error));
+      throw ParseException("Encountered non-numeric character in number.");
     }
 
     NumberLiteral.push_back(CurrentChar);
@@ -135,18 +129,15 @@ void Lexer::lexChar(Token &Tok) {
   assert(CurrentChar == '\'');
 
   if (!readNextChar()) {
-    std::string Error("Encountered opening single quote at the end of source.");
-    Logger.error(Error);
-    throw ParseException(std::move(Error));
+    throw ParseException(
+        "Encountered opening single quote at the end of source.");
   }
 
   std::string CharLiteral(1, CurrentChar);
 
   if (!readNextChar() && CurrentChar != '\'') {
-    std::string Error(
+    throw ParseException(
         "Encountered character literal with a length greater than 1.");
-    Logger.error(Error);
-    throw ParseException(std::move(Error));
   }
 
   Logger.debug("Lexed character with value {}.", CharLiteral);
@@ -157,18 +148,15 @@ void Lexer::lexString(Token &Tok) {
   assert(CurrentChar == '\"');
 
   if (!readNextChar()) {
-    std::string Error("Encountered open quotation mark at the end of source.");
-    Logger.error(Error);
-    throw ParseException(std::move(Error));
+    throw ParseException(
+        "Encountered open quotation mark at the end of source.");
   }
 
   std::string StringLiteral;
   while (CurrentChar != '\"') {
     StringLiteral.push_back(CurrentChar);
     if (!readNextChar()) {
-      std::string Error("String literal has no closing quotation mark.");
-      Logger.error(Error);
-      throw ParseException(std::move(Error));
+      throw ParseException("String literal has no closing quotation mark.");
     }
   }
 
