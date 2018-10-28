@@ -25,6 +25,7 @@ enum class TokenKind {
   // Keywords.
   TK_If,
   TK_Else,
+  TK_For,
   TK_Return,
   // Symbols.
   TK_OpenBrace,
@@ -64,6 +65,8 @@ inline std::string tokenKindToString(TokenKind Kind) {
     return "If";
   case TokenKind::TK_Else:
     return "Else";
+  case TokenKind::TK_For:
+    return "For";
   case TokenKind::TK_Return:
     return "Return";
   case TokenKind::TK_OpenBrace:

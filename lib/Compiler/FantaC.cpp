@@ -12,7 +12,7 @@ FantaC::FantaC() : LFConfig{spdlog::level::level_enum::debug}, LF(LFConfig) {}
 
 void FantaC::run(const std::string &FileName) {
   // Construct logger.
-  auto &Logger = LF.createLogger("FantaC");
+  auto Logger = LF.createLogger("FantaC");
 
   // Setup the visitors we want.
   ASTVisitors.push_back(std::make_unique<ast::ASTLogger>(LF));
@@ -27,7 +27,7 @@ void FantaC::run(const std::string &FileName) {
     Lexer.reset(new parse::Lexer(&*Source.begin(), &*(Source.end() - 1), LF));
     Parser.reset(new parse::Parser(*Lexer, LF));
 
-    Logger.info("Parsing to AST.");
+    Logger->info("Parsing to AST.");
 
     // Parse into AST and generate LLVM IR.
     while (auto AST = Parser->parseTopLevelExpr()) {
@@ -36,8 +36,8 @@ void FantaC::run(const std::string &FileName) {
       }
     }
   } catch (const parse::ParseException &Error) {
-    Logger.error("Caught ParseException: \"{}\". Terminating compilation.",
-                 Error.what());
+    Logger->error("Caught ParseException: \"{}\". Terminating compilation.",
+                  Error.what());
   }
 }
 

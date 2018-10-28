@@ -11,7 +11,7 @@ IRGenerator::IRGenerator(util::LoggerFactory &LF)
 IRGenerator::~IRGenerator() { Module.print(llvm::errs(), nullptr); }
 
 void IRGenerator::visit(ast::FunctionDecl &AST) {
-  Logger.info("Generating IR for FunctionDecl.");
+  Logger->info("Generating IR for FunctionDecl.");
 
   std::vector<llvm::Type *> Args(AST.Args.size(),
                                  llvm::Type::getInt32Ty(Context));
@@ -31,7 +31,7 @@ void IRGenerator::visit(ast::FunctionDecl &AST) {
 }
 
 void IRGenerator::visit(ast::FunctionDef &AST) {
-  Logger.info("Generating IR for FunctionDef.");
+  Logger->info("Generating IR for FunctionDef.");
 
   llvm::Function *F = nullptr;
   const auto &Name = AST.Decl->Name;
@@ -59,7 +59,7 @@ void IRGenerator::visit(ast::FunctionDef &AST) {
 }
 
 void IRGenerator::visit(ast::VariableDecl &AST) {
-  Logger.info("Generating IR for VariableDecl.");
+  Logger->info("Generating IR for VariableDecl.");
 
   auto *F = Builder.GetInsertBlock()->getParent();
 
@@ -76,5 +76,9 @@ llvm::AllocaInst *IRGenerator::createEntryBlockAlloca(
 
   return B.CreateAlloca(Type, nullptr, VariableName);
 }
+
+void IRGenerator::visit(ast::BinaryOp &AST) { static_cast<void>(AST); }
+
+void IRGenerator::visit(ast::IfCond &AST) { static_cast<void>(AST); }
 
 } // namespace fantac::codegen

@@ -9,6 +9,8 @@ namespace fantac::ast {
 struct FunctionDecl;
 struct FunctionDef;
 struct VariableDecl;
+struct BinaryOp;
+struct IfCond;
 
 // Visitor interface for walking the AST.
 class IASTVisitor {
@@ -18,6 +20,8 @@ public:
   virtual void visit(FunctionDecl &AST) = 0;
   virtual void visit(FunctionDef &AST) = 0;
   virtual void visit(VariableDecl &AST) = 0;
+  virtual void visit(BinaryOp &AST) = 0;
+  virtual void visit(IfCond &AST) = 0;
 };
 
 // Base class for all AST nodes.
@@ -48,7 +52,18 @@ struct FunctionDecl : public IAST {
   virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename TStream>
-  friend TStream &operator<<(TStream &Stream, const FunctionDecl &F);
+  friend TStream &operator<<(TStream &Stream, const FunctionDecl &F) {
+    Stream << "{Name=" << F.Name << ", Args=(";
+    for (const auto &Arg : F.Args) {
+      Stream << Arg.first;
+      if (&Arg != &F.Args.back()) {
+        Stream << ", ";
+      }
+    }
+
+    Stream << ")}";
+    return Stream;
+  }
 
   const std::string Name;
   const CTypeKind Return;
@@ -70,7 +85,10 @@ struct FunctionDef : public IAST {
   virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename TStream>
-  friend TStream &operator<<(TStream &Stream, const FunctionDef &F);
+  friend TStream &operator<<(TStream &Stream, const FunctionDef &F) {
+    Stream << "{Decl=" << *F.Decl << "}";
+    return Stream;
+  }
 
   const std::unique_ptr<FunctionDecl> Decl;
   const std::vector<ASTPtr> Body;
@@ -85,37 +103,47 @@ struct VariableDecl : public IAST {
   virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename TStream>
-  friend TStream &operator<<(TStream &Stream, const VariableDecl &V);
+  friend TStream &operator<<(TStream &Stream, const VariableDecl &V) {
+    Stream << "{Name=" << V.Name << "}";
+    return Stream;
+  }
 
   const CTypeKind Type;
   const std::string Name;
-  const ast::ASTPtr ValueExpr;
+  const ASTPtr ValueExpr;
 };
 
-template <typename TStream>
-TStream &operator<<(TStream &Stream, const FunctionDecl &F) {
-  Stream << "{Name=" << F.Name << ", Args=(";
-  for (const auto &Arg : F.Args) {
-    Stream << Arg.first;
-    if (&Arg != &F.Args.back()) {
-      Stream << ", ";
-    }
+struct BinaryOp : public IAST {
+  BinaryOp(char Operator, std::unique_ptr<IAST> &&Left,
+           std::unique_ptr<IAST> &&Right)
+      : Operator(Operator), Left(std::move(Left)), Right(std::move(Right)) {}
+
+  // IAST impl.
+  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+
+  template <typename TStream>
+  friend TStream &operator<<(TStream &Stream, const BinaryOp &B) {
+    Stream << "{Operator=" << B.Operator << "}";
+    return Stream;
   }
 
-  Stream << ")}";
-  return Stream;
-}
+  const char Operator;
+  const ASTPtr Left, Right;
+};
 
-template <typename TStream>
-TStream &operator<<(TStream &Stream, const FunctionDef &F) {
-  Stream << "{Decl=" << *F.Decl << "}";
-  return Stream;
-}
+struct IfCond : public IAST {
+  IfCond(ASTPtr &&Condition, std::vector<ASTPtr> &&Then,
+         std::vector<ASTPtr> &&Else)
+      : Condition(std::move(Condition)), Then(std::move(Then)),
+        Else(std::move(Else)) {}
+  virtual ~IfCond() = default;
 
-template <typename TStream>
-TStream &operator<<(TStream &Stream, const VariableDecl &V) {
-  Stream << "{Name=" << V.Name << "}";
-  return Stream;
-}
+  // IAST impl.
+  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); };
+
+  const ASTPtr Condition;
+  const std::vector<ASTPtr> Then;
+  const std::vector<ASTPtr> Else;
+};
 
 } // namespace fantac::ast

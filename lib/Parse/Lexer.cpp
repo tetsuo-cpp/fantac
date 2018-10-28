@@ -16,6 +16,12 @@ const std::vector<std::pair<char, TokenKind>> SymbolMappings = {
     {'/', TokenKind::TK_Divide},      {'<', TokenKind::TK_LessThan},
     {'>', TokenKind::TK_GreaterThan}, {'=', TokenKind::TK_Equals}};
 
+const std::vector<std::pair<std::string, TokenKind>> KeywordMappings = {
+    {"if", TokenKind::TK_If},
+    {"else", TokenKind::TK_Else},
+    {"for", TokenKind::TK_For},
+    {"return", TokenKind::TK_Return}};
+
 std::pair<bool, TokenKind> isSymbol(char Char) {
   const auto SymbolMappingIter =
       std::find_if(SymbolMappings.begin(), SymbolMappings.end(),
@@ -51,7 +57,7 @@ bool Lexer::lexToken(Token &Tok) {
   // Trim any leading whitespace.
   while (std::isspace(CurrentChar)) {
     if (!readNextChar()) {
-      Logger.info("Lexed EOF. Finished lexing.");
+      Logger->info("Lexed EOF. Finished lexing.");
       Tok.assign(TokenKind::TK_EOF);
       return false;
     }
@@ -69,7 +75,7 @@ bool Lexer::lexToken(Token &Tok) {
 
   const auto Result = isSymbol(CurrentChar);
   if (Result.first) {
-    Logger.debug("Lexed symbol with value {}.", CurrentChar);
+    Logger->debug("Lexed symbol with value {}.", CurrentChar);
     Tok.assign(Result.second, std::string(1, CurrentChar));
     readNextChar();
     return true;
@@ -104,7 +110,22 @@ void Lexer::lexIdentifier(Token &Tok) {
     }
   }
 
-  Logger.debug("Lexed identifier with value {}.", Identifier);
+  auto KeywordIter = std::find_if(
+      KeywordMappings.begin(), KeywordMappings.end(),
+      [&Identifier](const std::pair<std::string, TokenKind> &KeywordPair) {
+        return Identifier == KeywordPair.first;
+      });
+
+  // Recognised a keyword.
+  if (KeywordIter != KeywordMappings.end()) {
+    Logger->debug("Lexed keyword of kind {} and value {}.", KeywordIter->second,
+                  Identifier);
+    Tok.assign(KeywordIter->second, std::move(Identifier));
+    return;
+  }
+
+  // Otherwise it's just an identifier.
+  Logger->debug("Lexed identifier with value {}.", Identifier);
   Tok.assign(TokenKind::TK_Identifier, std::move(Identifier));
 }
 
@@ -121,7 +142,7 @@ void Lexer::lexNumber(Token &Tok) {
     }
   }
 
-  Logger.debug("Lexed number with value {}.", NumberLiteral);
+  Logger->debug("Lexed number with value {}.", NumberLiteral);
   Tok.assign(TokenKind::TK_NumberLiteral, std::move(NumberLiteral));
 }
 
@@ -140,7 +161,7 @@ void Lexer::lexChar(Token &Tok) {
         "Encountered character literal with a length greater than 1.");
   }
 
-  Logger.debug("Lexed character with value {}.", CharLiteral);
+  Logger->debug("Lexed character with value {}.", CharLiteral);
   Tok.assign(TokenKind::TK_CharLiteral, std::move(CharLiteral));
 }
 
@@ -162,7 +183,7 @@ void Lexer::lexString(Token &Tok) {
 
   assert(CurrentChar == '\"');
 
-  Logger.debug("Lexed string literal with value {}.", StringLiteral);
+  Logger->debug("Lexed string literal with value {}.", StringLiteral);
   Tok.assign(TokenKind::TK_StringLiteral, std::move(StringLiteral));
 }
 

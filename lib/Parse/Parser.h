@@ -19,10 +19,13 @@ private:
   void expectToken(TokenKind Kind);
   ast::ASTPtr parseFunction(ast::CTypeKind Return, std::string &&Name);
   ast::ASTPtr parseStatement();
+  ast::ASTPtr parseVariableDecl(ast::CTypeKind Type);
+  ast::ASTPtr parseIfCond();
+  ast::ASTPtr parseExpr();
 
   ILexer &Lexer;
   Token CurrentToken;
-  spdlog::logger &Logger;
+  std::unique_ptr<spdlog::logger> Logger;
 };
 
 } // namespace fantac::parse

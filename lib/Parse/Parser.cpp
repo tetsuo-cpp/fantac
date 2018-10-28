@@ -36,9 +36,9 @@ Parser::Parser(ILexer &Lexer, util::LoggerFactory &LF)
 }
 
 ast::ASTPtr Parser::parseTopLevelExpr() {
-  Logger.info("Parsing top level expression.");
+  Logger->info("Parsing top level expression.");
   if (CurrentToken.Kind == TokenKind::TK_EOF) {
-    Logger.info("Encountered end of file. Stopping parsing.");
+    Logger->info("Encountered end of file. Stopping parsing.");
     return nullptr;
   }
 
@@ -101,15 +101,15 @@ ast::ASTPtr Parser::parseFunction(ast::CTypeKind Return, std::string &&Name) {
 
   // Function declaration.
   if (consumeToken(TokenKind::TK_Semicolon)) {
-    Logger.info("Found function declaration.");
+    Logger->info("Found function declaration.");
     return Decl;
   }
 
-  Logger.info("Found function definition.");
+  expectToken(TokenKind::TK_OpenBrace);
+  Logger->info("Found function definition.");
 
   // Otherwise, function definition.
   std::vector<ast::ASTPtr> Body;
-  expectToken(TokenKind::TK_OpenBrace);
   while (!consumeToken(TokenKind::TK_CloseBrace)) {
     Body.push_back(parseStatement());
   }
@@ -118,23 +118,20 @@ ast::ASTPtr Parser::parseFunction(ast::CTypeKind Return, std::string &&Name) {
 }
 
 ast::ASTPtr Parser::parseStatement() {
-  Logger.debug("Skipping over statement.");
+  if (consumeToken(TokenKind::TK_If)) {
+    // Conditional.
+    return parseIfCond();
+  } else if (consumeToken(TokenKind::TK_For)) {
+    // Loop.
+  }
 
+  // Variable declaration.
   const auto Type = stringToCTypeKind(CurrentToken.Value);
   if (Type != ast::CTypeKind::CTK_None) {
-    // Consume type.
-    expectToken(TokenKind::TK_Identifier);
-
-    // Consume name.
-    auto Name = CurrentToken.Value;
-    expectToken(TokenKind::TK_Identifier);
-
-    // TODO: Parse assignments.
-    while (!consumeToken(TokenKind::TK_Semicolon) && Lexer.lex(CurrentToken)) {
-    }
-
-    return std::make_unique<ast::VariableDecl>(Type, std::move(Name));
+    return parseVariableDecl(Type);
   }
+
+  Logger->debug("Skipping over statement.");
 
   // Skip over statement.
   while (!consumeToken(TokenKind::TK_Semicolon) && Lexer.lex(CurrentToken)) {
@@ -142,5 +139,55 @@ ast::ASTPtr Parser::parseStatement() {
 
   return nullptr;
 }
+
+ast::ASTPtr Parser::parseVariableDecl(ast::CTypeKind Type) {
+  // Consume type.
+  expectToken(TokenKind::TK_Identifier);
+
+  // Consume name.
+  auto Name = CurrentToken.Value;
+  expectToken(TokenKind::TK_Identifier);
+
+  // TODO: Parse assignments.
+  while (!consumeToken(TokenKind::TK_Semicolon) && Lexer.lex(CurrentToken)) {
+  }
+
+  Logger->info("Found variable declaration.");
+
+  return std::make_unique<ast::VariableDecl>(Type, std::move(Name));
+}
+
+ast::ASTPtr Parser::parseIfCond() {
+  expectToken(TokenKind::TK_OpenParen);
+  auto Cond = parseExpr();
+  expectToken(TokenKind::TK_CloseParen);
+
+  std::vector<ast::ASTPtr> Then;
+  std::vector<ast::ASTPtr> Else;
+
+  if (consumeToken(TokenKind::TK_OpenBrace)) {
+    while (!consumeToken(TokenKind::TK_CloseBrace)) {
+      Then.push_back(parseStatement());
+    }
+
+    if (consumeToken(TokenKind::TK_Else)) {
+      expectToken(TokenKind::TK_OpenBrace);
+      while (!consumeToken(TokenKind::TK_CloseBrace)) {
+        Else.push_back(parseStatement());
+      }
+    }
+  } else {
+    // Braceless conditional.
+    Then.push_back(parseStatement());
+    if (consumeToken(TokenKind::TK_Else)) {
+      Else.push_back(parseStatement());
+    }
+  }
+
+  return std::make_unique<ast::IfCond>(std::move(Cond), std::move(Then),
+                                       std::move(Else));
+}
+
+ast::ASTPtr Parser::parseExpr() { return nullptr; }
 
 } // namespace fantac::parse

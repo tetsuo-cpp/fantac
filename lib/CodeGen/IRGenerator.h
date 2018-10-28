@@ -18,6 +18,8 @@ public:
   virtual void visit(ast::FunctionDecl &AST) override;
   virtual void visit(ast::FunctionDef &AST) override;
   virtual void visit(ast::VariableDecl &AST) override;
+  virtual void visit(ast::BinaryOp &AST) override;
+  virtual void visit(ast::IfCond &AST) override;
 
 private:
   llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *F,
@@ -28,7 +30,7 @@ private:
   llvm::IRBuilder<> Builder;
   llvm::Module Module;
   std::map<std::string, llvm::Function *> Functions;
-  spdlog::logger &Logger;
+  std::unique_ptr<spdlog::logger> Logger;
 };
 
 } // namespace fantac::codegen

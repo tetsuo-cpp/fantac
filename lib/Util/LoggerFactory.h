@@ -20,20 +20,15 @@ public:
         Config(Config) {}
   virtual ~LoggerFactory() = default;
 
-  spdlog::logger &createLogger(const std::string &Name) {
-    // Not copyable or moveable.
-    // Perhaps I'm missing something but from what I can tell, this is all
-    // necessary.
+  std::unique_ptr<spdlog::logger> createLogger(const std::string &Name) {
     auto Logger = std::make_unique<spdlog::logger>(Name, Sink);
     Logger->set_level(Config.LogLevel);
-    Loggers.push_back(std::move(Logger));
-    return *Loggers.back();
+    return Logger;
   }
 
 private:
   spdlog::sink_ptr Sink;
   LoggerConfig Config;
-  std::vector<std::unique_ptr<spdlog::logger>> Loggers;
 };
 
 } // namespace fantac::util
