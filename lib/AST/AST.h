@@ -114,8 +114,7 @@ struct VariableDecl : public IAST {
 };
 
 struct BinaryOp : public IAST {
-  BinaryOp(char Operator, std::unique_ptr<IAST> &&Left,
-           std::unique_ptr<IAST> &&Right)
+  BinaryOp(char Operator, ASTPtr &&Left, ASTPtr &&Right)
       : Operator(Operator), Left(std::move(Left)), Right(std::move(Right)) {}
 
   // IAST impl.
