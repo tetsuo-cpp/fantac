@@ -24,6 +24,7 @@ public:
   virtual void visit(ast::StringLiteral &AST) override;
   virtual void visit(ast::VariableRef &AST) override;
   virtual void visit(ast::WhileLoop &AST) override;
+  virtual void visit(ast::ForLoop &AST) override;
 
 private:
   llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *F,

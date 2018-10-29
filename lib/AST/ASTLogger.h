@@ -23,6 +23,7 @@ public:
   virtual void visit(StringLiteral &AST) override;
   virtual void visit(VariableRef &AST) override;
   virtual void visit(WhileLoop &AST) override;
+  virtual void visit(ForLoop &AST) override;
 
 private:
   std::unique_ptr<spdlog::logger> Logger;
@@ -96,6 +97,25 @@ inline void ASTLogger::visit(WhileLoop &AST) {
     if (Instruction) {
       Instruction->accept(*this);
     }
+  }
+}
+
+inline void ASTLogger::visit(ForLoop &AST) {
+  Logger->info("ForLoop: {}.");
+  if (AST.Init) {
+    AST.Init->accept(*this);
+  }
+
+  if (AST.Condition) {
+    AST.Condition->accept(*this);
+  }
+
+  if (AST.Iteration) {
+    AST.Iteration->accept(*this);
+  }
+
+  for (auto &Instruction : AST.Body) {
+    Instruction->accept(*this);
   }
 }
 

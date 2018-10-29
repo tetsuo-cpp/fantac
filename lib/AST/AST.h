@@ -15,6 +15,7 @@ struct NumberLiteral;
 struct StringLiteral;
 struct VariableRef;
 struct WhileLoop;
+struct ForLoop;
 
 // Visitor interface for walking the AST.
 class IASTVisitor {
@@ -30,6 +31,7 @@ public:
   virtual void visit(StringLiteral &AST) = 0;
   virtual void visit(VariableRef &AST) = 0;
   virtual void visit(WhileLoop &AST) = 0;
+  virtual void visit(ForLoop &AST) = 0;
 };
 
 // Base class for all AST nodes.
@@ -162,6 +164,21 @@ struct WhileLoop : public IAST {
   const std::vector<ASTPtr> Body;
 };
 
+struct ForLoop : public IAST {
+  ForLoop(ASTPtr &&Init, ASTPtr &&Condition, ASTPtr &&Iteration,
+          std::vector<ASTPtr> &&Body)
+      : Init(std::move(Init)), Condition(std::move(Condition)),
+        Iteration(std::move(Iteration)), Body(std::move(Body)) {}
+
+  // IAST impl.
+  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+
+  const ASTPtr Init;
+  const ASTPtr Condition;
+  const ASTPtr Iteration;
+  const std::vector<ASTPtr> Body;
+};
+
 struct NumberLiteral : public IAST {
   NumberLiteral(unsigned int Value) : Value(Value) {}
 
@@ -174,7 +191,7 @@ struct NumberLiteral : public IAST {
     return Stream;
   }
 
-  unsigned int Value;
+  const unsigned int Value;
 };
 
 struct StringLiteral : public IAST {

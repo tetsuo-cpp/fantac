@@ -123,6 +123,7 @@ ast::ASTPtr Parser::parseStatement() {
     return parseIfCond();
   } else if (consumeToken(TokenKind::TK_For)) {
     // For loop.
+    return parseForLoop();
   } else if (consumeToken(TokenKind::TK_While)) {
     // While loop.
     return parseWhileLoop();
@@ -205,6 +206,29 @@ ast::ASTPtr Parser::parseWhileLoop() {
   }
 
   return std::make_unique<ast::WhileLoop>(std::move(Cond), std::move(Body));
+}
+
+ast::ASTPtr Parser::parseForLoop() {
+  expectToken(TokenKind::TK_OpenParen);
+  auto Init = parseStatement();
+  auto Cond = parseExpr();
+  expectToken(TokenKind::TK_Semicolon);
+  auto Iter = parseExpr();
+  expectToken(TokenKind::TK_CloseParen);
+
+  std::vector<ast::ASTPtr> Body;
+
+  if (consumeToken(TokenKind::TK_OpenBrace)) {
+    while (!consumeToken(TokenKind::TK_CloseBrace)) {
+      Body.push_back(parseStatement());
+    }
+  } else {
+    // Braceless loop.
+    Body.push_back(parseStatement());
+  }
+
+  return std::make_unique<ast::ForLoop>(std::move(Init), std::move(Cond),
+                                        std::move(Iter), std::move(Body));
 }
 
 ast::ASTPtr Parser::parseExpr() {

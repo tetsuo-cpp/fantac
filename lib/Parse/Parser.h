@@ -22,6 +22,7 @@ private:
   ast::ASTPtr parseVariableDecl(ast::CTypeKind Type);
   ast::ASTPtr parseIfCond();
   ast::ASTPtr parseWhileLoop();
+  ast::ASTPtr parseForLoop();
   ast::ASTPtr parseExpr();
   ast::ASTPtr parsePrimaryExpr();
 
