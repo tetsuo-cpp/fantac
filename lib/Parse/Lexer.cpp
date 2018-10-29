@@ -14,12 +14,14 @@ const std::vector<std::pair<char, TokenKind>> SymbolMappings = {
     {':', TokenKind::TK_Colon},       {'+', TokenKind::TK_Add},
     {'-', TokenKind::TK_Subtract},    {'*', TokenKind::TK_Multiply},
     {'/', TokenKind::TK_Divide},      {'<', TokenKind::TK_LessThan},
-    {'>', TokenKind::TK_GreaterThan}, {'=', TokenKind::TK_Equals}};
+    {'>', TokenKind::TK_GreaterThan}, {'=', TokenKind::TK_Equals},
+    {'.', TokenKind::TK_Period}};
 
 const std::vector<std::pair<std::string, TokenKind>> KeywordMappings = {
     {"if", TokenKind::TK_If},
     {"else", TokenKind::TK_Else},
     {"for", TokenKind::TK_For},
+    {"while", TokenKind::TK_While},
     {"return", TokenKind::TK_Return}};
 
 std::pair<bool, TokenKind> isSymbol(char Char) {

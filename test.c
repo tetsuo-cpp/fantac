@@ -2,7 +2,10 @@ int foo(int x, int y);
 
 int bar(int x) {
   int y = foo(x, x);
-  x = y;
+  if (x > y) {
+    x = y;
+  }
+
   return x;
 }
 

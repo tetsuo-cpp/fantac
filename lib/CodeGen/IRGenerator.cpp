@@ -81,4 +81,12 @@ void IRGenerator::visit(ast::BinaryOp &AST) { static_cast<void>(AST); }
 
 void IRGenerator::visit(ast::IfCond &AST) { static_cast<void>(AST); }
 
+void IRGenerator::visit(ast::NumberLiteral &AST) { static_cast<void>(AST); }
+
+void IRGenerator::visit(ast::StringLiteral &AST) { static_cast<void>(AST); }
+
+void IRGenerator::visit(ast::VariableRef &AST) { static_cast<void>(AST); }
+
+void IRGenerator::visit(ast::WhileLoop &AST) { static_cast<void>(AST); }
+
 } // namespace fantac::codegen

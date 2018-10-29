@@ -11,6 +11,10 @@ struct FunctionDef;
 struct VariableDecl;
 struct BinaryOp;
 struct IfCond;
+struct NumberLiteral;
+struct StringLiteral;
+struct VariableRef;
+struct WhileLoop;
 
 // Visitor interface for walking the AST.
 class IASTVisitor {
@@ -22,6 +26,10 @@ public:
   virtual void visit(VariableDecl &AST) = 0;
   virtual void visit(BinaryOp &AST) = 0;
   virtual void visit(IfCond &AST) = 0;
+  virtual void visit(NumberLiteral &AST) = 0;
+  virtual void visit(StringLiteral &AST) = 0;
+  virtual void visit(VariableRef &AST) = 0;
+  virtual void visit(WhileLoop &AST) = 0;
 };
 
 // Base class for all AST nodes.
@@ -135,7 +143,6 @@ struct IfCond : public IAST {
          std::vector<ASTPtr> &&Else)
       : Condition(std::move(Condition)), Then(std::move(Then)),
         Else(std::move(Else)) {}
-  virtual ~IfCond() = default;
 
   // IAST impl.
   virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); };
@@ -143,6 +150,64 @@ struct IfCond : public IAST {
   const ASTPtr Condition;
   const std::vector<ASTPtr> Then;
   const std::vector<ASTPtr> Else;
+};
+
+struct WhileLoop : public IAST {
+  WhileLoop(ASTPtr &&Condition, std::vector<ASTPtr> &&Body)
+      : Condition(std::move(Condition)), Body(std::move(Body)) {}
+
+  // IAST impl.
+  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+
+  const ASTPtr Condition;
+  const std::vector<ASTPtr> Body;
+};
+
+struct NumberLiteral : public IAST {
+  NumberLiteral(unsigned int Value) : Value(Value) {}
+
+  // IAST impl.
+  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+
+  template <typename TStream>
+  friend TStream &operator<<(TStream &Stream, const NumberLiteral &N) {
+    Stream << "{Value=" << N.Value << "}";
+    return Stream;
+  }
+
+  unsigned int Value;
+};
+
+struct StringLiteral : public IAST {
+  template <typename TString>
+  StringLiteral(TString &&Value) : Value(std::forward<TString>(Value)) {}
+
+  // IAST impl.
+  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+
+  template <typename TStream>
+  friend TStream &operator<<(TStream &Stream, const StringLiteral &S) {
+    Stream << "{Value=" << S.Value << "}";
+    return Stream;
+  }
+
+  const std::string Value;
+};
+
+struct VariableRef : public IAST {
+  template <typename TString>
+  VariableRef(TString &&Name) : Name(std::forward<TString>(Name)) {}
+
+  // IAST impl.
+  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+
+  template <typename TStream>
+  friend TStream &operator<<(TStream &Stream, const VariableRef &V) {
+    Stream << "{Name=" << V.Name << "}";
+    return Stream;
+  }
+
+  const std::string Name;
 };
 
 } // namespace fantac::ast

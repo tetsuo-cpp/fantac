@@ -26,6 +26,7 @@ enum class TokenKind {
   TK_If,
   TK_Else,
   TK_For,
+  TK_While,
   TK_Return,
   // Symbols.
   TK_OpenBrace,
@@ -44,6 +45,8 @@ enum class TokenKind {
   TK_LessThan,
   TK_GreaterThan,
   TK_Equals,
+  // Postfix.
+  TK_Period,
   // End of file.
   TK_EOF,
   TK_None

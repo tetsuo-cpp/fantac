@@ -21,7 +21,9 @@ private:
   ast::ASTPtr parseStatement();
   ast::ASTPtr parseVariableDecl(ast::CTypeKind Type);
   ast::ASTPtr parseIfCond();
+  ast::ASTPtr parseWhileLoop();
   ast::ASTPtr parseExpr();
+  ast::ASTPtr parsePrimaryExpr();
 
   ILexer &Lexer;
   Token CurrentToken;

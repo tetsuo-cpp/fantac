@@ -19,6 +19,10 @@ public:
   virtual void visit(VariableDecl &AST) override;
   virtual void visit(BinaryOp &AST) override;
   virtual void visit(IfCond &AST) override;
+  virtual void visit(NumberLiteral &AST) override;
+  virtual void visit(StringLiteral &AST) override;
+  virtual void visit(VariableRef &AST) override;
+  virtual void visit(WhileLoop &AST) override;
 
 private:
   std::unique_ptr<spdlog::logger> Logger;
@@ -56,7 +60,7 @@ inline void ASTLogger::visit(BinaryOp &AST) {
 }
 
 inline void ASTLogger::visit(IfCond &AST) {
-  Logger->info("IfCond: \{}\".");
+  Logger->info("IfCond: {}.");
   for (const auto &Instruction : AST.Then) {
     if (Instruction) {
       Instruction->accept(*this);
@@ -64,6 +68,31 @@ inline void ASTLogger::visit(IfCond &AST) {
   }
 
   for (const auto &Instruction : AST.Else) {
+    if (Instruction) {
+      Instruction->accept(*this);
+    }
+  }
+}
+
+inline void ASTLogger::visit(NumberLiteral &AST) {
+  Logger->info("NumberLiteral: {}.", AST);
+}
+
+inline void ASTLogger::visit(StringLiteral &AST) {
+  Logger->info("StringLiteral: {}.", AST);
+}
+
+inline void ASTLogger::visit(VariableRef &AST) {
+  Logger->info("VariableRef: {}.", AST);
+}
+
+inline void ASTLogger::visit(WhileLoop &AST) {
+  Logger->info("WhileLoop: {}.");
+  if (AST.Condition) {
+    AST.Condition->accept(*this);
+  }
+
+  for (auto &Instruction : AST.Body) {
     if (Instruction) {
       Instruction->accept(*this);
     }

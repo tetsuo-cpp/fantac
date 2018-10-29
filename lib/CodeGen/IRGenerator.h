@@ -20,6 +20,10 @@ public:
   virtual void visit(ast::VariableDecl &AST) override;
   virtual void visit(ast::BinaryOp &AST) override;
   virtual void visit(ast::IfCond &AST) override;
+  virtual void visit(ast::NumberLiteral &AST) override;
+  virtual void visit(ast::StringLiteral &AST) override;
+  virtual void visit(ast::VariableRef &AST) override;
+  virtual void visit(ast::WhileLoop &AST) override;
 
 private:
   llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *F,

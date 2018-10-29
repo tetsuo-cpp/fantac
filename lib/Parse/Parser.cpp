@@ -28,7 +28,7 @@ ast::CTypeKind stringToCTypeKind(const std::string &Type) {
   return CTypeMappingIter->second;
 }
 
-} // anonymous namespace
+} // namespace
 
 Parser::Parser(ILexer &Lexer, util::LoggerFactory &LF)
     : Lexer(Lexer), Logger(LF.createLogger("Parser")) {
@@ -122,7 +122,10 @@ ast::ASTPtr Parser::parseStatement() {
     // Conditional.
     return parseIfCond();
   } else if (consumeToken(TokenKind::TK_For)) {
-    // Loop.
+    // For loop.
+  } else if (consumeToken(TokenKind::TK_While)) {
+    // While loop.
+    return parseWhileLoop();
   }
 
   // Variable declaration.
@@ -141,10 +144,7 @@ ast::ASTPtr Parser::parseStatement() {
 }
 
 ast::ASTPtr Parser::parseVariableDecl(ast::CTypeKind Type) {
-  // Consume type.
   expectToken(TokenKind::TK_Identifier);
-
-  // Consume name.
   auto Name = CurrentToken.Value;
   expectToken(TokenKind::TK_Identifier);
 
@@ -188,6 +188,51 @@ ast::ASTPtr Parser::parseIfCond() {
                                        std::move(Else));
 }
 
-ast::ASTPtr Parser::parseExpr() { return nullptr; }
+ast::ASTPtr Parser::parseWhileLoop() {
+  expectToken(TokenKind::TK_OpenParen);
+  auto Cond = parseExpr();
+  expectToken(TokenKind::TK_CloseParen);
+
+  std::vector<ast::ASTPtr> Body;
+
+  if (consumeToken(TokenKind::TK_CloseBrace)) {
+    while (!consumeToken(TokenKind::TK_CloseBrace)) {
+      Body.push_back(parseStatement());
+    }
+  } else {
+    // Braceless loop.
+    Body.push_back(parseStatement());
+  }
+
+  return std::make_unique<ast::WhileLoop>(std::move(Cond), std::move(Body));
+}
+
+ast::ASTPtr Parser::parseExpr() {
+  // Lots more to do here. Just get it working for the moment.
+  auto Left = parsePrimaryExpr();
+  assert(CurrentToken.Value.size() == 1);
+  const auto Operator = CurrentToken.Value.front();
+  Lexer.lex(CurrentToken);
+  auto Right = parsePrimaryExpr();
+
+  return std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
+                                         std::move(Right));
+}
+
+ast::ASTPtr Parser::parsePrimaryExpr() {
+  // TODO: Support floats, function calls and more.
+  const auto Kind = CurrentToken.Kind;
+  Lexer.lex(CurrentToken);
+  switch (Kind) {
+  case TokenKind::TK_NumberLiteral:
+    return std::make_unique<ast::NumberLiteral>(std::stoi(CurrentToken.Value));
+  case TokenKind::TK_StringLiteral:
+    return std::make_unique<ast::StringLiteral>(CurrentToken.Value);
+  case TokenKind::TK_Identifier:
+    return std::make_unique<ast::VariableRef>(CurrentToken.Value);
+  default:
+    throw ParseException("Unknown primary expression.");
+  }
+}
 
 } // namespace fantac::parse
