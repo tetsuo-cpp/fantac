@@ -148,8 +148,7 @@ struct IfCond : public IAST {
   virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); };
 
   const ASTPtr Condition;
-  const std::vector<ASTPtr> Then;
-  const std::vector<ASTPtr> Else;
+  const std::vector<ASTPtr> Then, Else;
 };
 
 struct WhileLoop : public IAST {
