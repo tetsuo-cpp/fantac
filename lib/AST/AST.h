@@ -124,8 +124,10 @@ struct VariableDecl : public IAST {
 };
 
 struct BinaryOp : public IAST {
-  BinaryOp(char Operator, ASTPtr &&Left, ASTPtr &&Right)
-      : Operator(Operator), Left(std::move(Left)), Right(std::move(Right)) {}
+  template <typename TString>
+  BinaryOp(TString &&Operator, ASTPtr &&Left, ASTPtr &&Right)
+      : Operator(std::forward<TString>(Operator)), Left(std::move(Left)),
+        Right(std::move(Right)) {}
 
   // IAST impl.
   virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
@@ -136,7 +138,7 @@ struct BinaryOp : public IAST {
     return Stream;
   }
 
-  const char Operator;
+  const std::string Operator;
   const ASTPtr Left, Right;
 };
 

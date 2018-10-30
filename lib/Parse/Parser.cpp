@@ -163,8 +163,7 @@ ast::ASTPtr Parser::parseIfCond() {
   auto Cond = parseExpr();
   expectToken(TokenKind::TK_CloseParen);
 
-  std::vector<ast::ASTPtr> Then;
-  std::vector<ast::ASTPtr> Else;
+  std::vector<ast::ASTPtr> Then, Else;
 
   if (consumeToken(TokenKind::TK_OpenBrace)) {
     while (!consumeToken(TokenKind::TK_CloseBrace)) {
@@ -234,12 +233,11 @@ ast::ASTPtr Parser::parseForLoop() {
 ast::ASTPtr Parser::parseExpr() {
   // Lots more to do here. Just get it working for the moment.
   auto Left = parsePrimaryExpr();
-  assert(CurrentToken.Value.size() == 1);
-  const auto Operator = CurrentToken.Value.front();
+  auto Operator = CurrentToken.Value;
   Lexer.lex(CurrentToken);
   auto Right = parsePrimaryExpr();
 
-  return std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
+  return std::make_unique<ast::BinaryOp>(std::move(Operator), std::move(Left),
                                          std::move(Right));
 }
 

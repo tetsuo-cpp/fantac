@@ -14,8 +14,21 @@ const std::vector<std::pair<char, TokenKind>> SymbolMappings = {
     {':', TokenKind::TK_Colon},       {'+', TokenKind::TK_Add},
     {'-', TokenKind::TK_Subtract},    {'*', TokenKind::TK_Multiply},
     {'/', TokenKind::TK_Divide},      {'<', TokenKind::TK_LessThan},
-    {'>', TokenKind::TK_GreaterThan}, {'=', TokenKind::TK_Equals},
-    {'.', TokenKind::TK_Period}};
+    {'>', TokenKind::TK_GreaterThan}, {'=', TokenKind::TK_Assign},
+    {'.', TokenKind::TK_Period},      {'%', TokenKind::TK_Modulus},
+    {'&', TokenKind::TK_And},         {'|', TokenKind::TK_Or},
+    {'^', TokenKind::TK_Xor}};
+
+const std::vector<std::pair<std::string, TokenKind>> CompoundSymbolMappings = {
+    {"+=", TokenKind::TK_AddEq},         {"-=", TokenKind::TK_SubtractEq},
+    {"*=", TokenKind::TK_MultiplyEq},    {"/=", TokenKind::TK_DivideEq},
+    {"%=", TokenKind::TK_ModulusEq},     {"==", TokenKind::TK_Equals},
+    {"<=", TokenKind::TK_LessThanEq},    {">=", TokenKind::TK_GreaterThanEq},
+    {"!=", TokenKind::TK_NotEquals},     {"<<", TokenKind::TK_ShiftLeft},
+    {"<<=", TokenKind::TK_ShiftLeftEq},  {">>", TokenKind::TK_ShiftRight},
+    {">>=", TokenKind::TK_ShiftRightEq}, {"&=", TokenKind::TK_AndEq},
+    {"|=", TokenKind::TK_OrEq},          {"^=", TokenKind::TK_XorEq},
+    {"&&", TokenKind::TK_LogicalAnd},    {"||", TokenKind::TK_LogicalOr}};
 
 const std::vector<std::pair<std::string, TokenKind>> KeywordMappings = {
     {"if", TokenKind::TK_If},
@@ -38,16 +51,30 @@ std::pair<bool, TokenKind> isSymbol(char Char) {
   return std::make_pair(true, SymbolMappingIter->second);
 }
 
+std::pair<bool, TokenKind> isCompoundSymbol(const std::string &Value) {
+  const auto CSymbolMappingIter = std::find_if(
+      CompoundSymbolMappings.begin(), CompoundSymbolMappings.end(),
+      [&Value](const std::pair<std::string, TokenKind> &CSymbolPair) {
+        return Value == CSymbolPair.first;
+      });
+
+  if (CSymbolMappingIter == CompoundSymbolMappings.end()) {
+    return std::make_pair(false, TokenKind::TK_None);
+  }
+
+  return std::make_pair(true, CSymbolMappingIter->second);
+}
+
 } // namespace
 
 Lexer::Lexer(const char *Begin, const char *End, util::LoggerFactory &LF)
     : CurrentChar(*Begin), Current(Begin + 1), End(End),
       Logger(LF.createLogger("Lexer")) {
-  assert(Begin != End);
+  assert(Begin < End);
 }
 
 bool Lexer::lex(Token &Tok) {
-  if (Current >= End) {
+  if (Current > End) {
     Tok.assign(TokenKind::TK_EOF);
     return false;
   }
@@ -77,9 +104,26 @@ bool Lexer::lexToken(Token &Tok) {
 
   const auto Result = isSymbol(CurrentChar);
   if (Result.first) {
-    Logger->debug("Lexed symbol with value {}.", CurrentChar);
-    Tok.assign(Result.second, std::string(1, CurrentChar));
-    readNextChar();
+    auto Kind = Result.second;
+    std::string CompoundSymbol{CurrentChar};
+    while (readNextChar()) {
+      if (std::isspace(CurrentChar)) {
+        continue;
+      }
+
+      CompoundSymbol.push_back(CurrentChar);
+      auto CResult = isCompoundSymbol(CompoundSymbol);
+      if (!CResult.first) {
+        CompoundSymbol.pop_back();
+        break;
+      } else {
+        Kind = CResult.second;
+      }
+    }
+
+    Logger->debug("Lexed symbol with kind {} and value {}.", Kind,
+                  CompoundSymbol);
+    Tok.assign(Kind, std::move(CompoundSymbol));
     return true;
   }
 
@@ -190,7 +234,7 @@ void Lexer::lexString(Token &Tok) {
 }
 
 bool Lexer::readNextChar() {
-  if (Current == End) {
+  if (Current > End) {
     return false;
   }
 

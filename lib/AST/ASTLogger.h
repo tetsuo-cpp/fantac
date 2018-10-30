@@ -38,11 +38,14 @@ inline void ASTLogger::visit(FunctionDecl &AST) {
 
 inline void ASTLogger::visit(FunctionDef &AST) {
   Logger->info("FunctionDef: {}.", AST);
+
   for (const auto &Instruction : AST.Body) {
     if (Instruction) {
       Instruction->accept(*this);
     }
   }
+
+  Logger->info("FunctionDef: End.");
 }
 
 inline void ASTLogger::visit(VariableDecl &AST) {
@@ -51,6 +54,7 @@ inline void ASTLogger::visit(VariableDecl &AST) {
 
 inline void ASTLogger::visit(BinaryOp &AST) {
   Logger->info("BinaryOp: {}.", AST);
+
   if (AST.Left) {
     AST.Left->accept(*this);
   }
@@ -62,17 +66,22 @@ inline void ASTLogger::visit(BinaryOp &AST) {
 
 inline void ASTLogger::visit(IfCond &AST) {
   Logger->info("IfCond: {}.");
+
   for (const auto &Instruction : AST.Then) {
     if (Instruction) {
       Instruction->accept(*this);
     }
   }
 
+  Logger->info("IfCond: Else.");
+
   for (const auto &Instruction : AST.Else) {
     if (Instruction) {
       Instruction->accept(*this);
     }
   }
+
+  Logger->info("IfCond: End.");
 }
 
 inline void ASTLogger::visit(NumberLiteral &AST) {
@@ -89,19 +98,23 @@ inline void ASTLogger::visit(VariableRef &AST) {
 
 inline void ASTLogger::visit(WhileLoop &AST) {
   Logger->info("WhileLoop: {}.");
+
   if (AST.Condition) {
     AST.Condition->accept(*this);
   }
 
-  for (auto &Instruction : AST.Body) {
+  for (const auto &Instruction : AST.Body) {
     if (Instruction) {
       Instruction->accept(*this);
     }
   }
+
+  Logger->info("WhileLoop: End.");
 }
 
 inline void ASTLogger::visit(ForLoop &AST) {
   Logger->info("ForLoop: {}.");
+
   if (AST.Init) {
     AST.Init->accept(*this);
   }
@@ -117,6 +130,8 @@ inline void ASTLogger::visit(ForLoop &AST) {
   for (auto &Instruction : AST.Body) {
     Instruction->accept(*this);
   }
+
+  Logger->info("ForLoop: End.");
 }
 
 } // namespace fantac::ast
