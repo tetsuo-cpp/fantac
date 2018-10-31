@@ -112,7 +112,7 @@ bool Lexer::lexToken(Token &Tok) {
       }
 
       CompoundSymbol.push_back(CurrentChar);
-      auto CResult = isCompoundSymbol(CompoundSymbol);
+      const auto CResult = isCompoundSymbol(CompoundSymbol);
       if (!CResult.first) {
         CompoundSymbol.pop_back();
         break;
