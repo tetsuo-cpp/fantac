@@ -11,6 +11,7 @@ struct FunctionDef;
 struct VariableDecl;
 struct BinaryOp;
 struct IfCond;
+struct TernaryCond;
 struct NumberLiteral;
 struct StringLiteral;
 struct VariableRef;
@@ -27,6 +28,7 @@ public:
   virtual void visit(VariableDecl &AST) = 0;
   virtual void visit(BinaryOp &AST) = 0;
   virtual void visit(IfCond &AST) = 0;
+  virtual void visit(TernaryCond &AST) = 0;
   virtual void visit(NumberLiteral &AST) = 0;
   virtual void visit(StringLiteral &AST) = 0;
   virtual void visit(VariableRef &AST) = 0;
@@ -153,6 +155,17 @@ struct IfCond : public IAST {
 
   const ASTPtr Condition;
   const std::vector<ASTPtr> Then, Else;
+};
+
+struct TernaryCond : public IAST {
+  TernaryCond(ASTPtr &&Condition, ASTPtr &&Then, ASTPtr &&Else)
+      : Condition(std::move(Condition)), Then(std::move(Then)),
+        Else(std::move(Else)) {}
+
+  // IAST impl.
+  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+
+  ASTPtr Condition, Then, Else;
 };
 
 struct WhileLoop : public IAST {

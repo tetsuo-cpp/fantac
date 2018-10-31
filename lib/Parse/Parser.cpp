@@ -257,4 +257,42 @@ ast::ASTPtr Parser::parsePrimaryExpr() {
   }
 }
 
+ast::ASTPtr Parser::parseAssignment() {
+  auto Left = parseTernary();
+  const auto T = CurrentToken;
+
+  if (consumeToken(TokenKind::TK_Equals) ||
+      consumeToken(TokenKind::TK_MultiplyEq) ||
+      consumeToken(TokenKind::TK_DivideEq) ||
+      consumeToken(TokenKind::TK_AddEq) ||
+      consumeToken(TokenKind::TK_SubtractEq) ||
+      consumeToken(TokenKind::TK_ModulusEq) ||
+      consumeToken(TokenKind::TK_AndEq) || consumeToken(TokenKind::TK_OrEq) ||
+      consumeToken(TokenKind::TK_XorEq) ||
+      consumeToken(TokenKind::TK_ShiftLeftEq) ||
+      consumeToken(TokenKind::TK_ShiftRightEq)) {
+    return std::make_unique<ast::BinaryOp>(T.Value, std::move(Left),
+                                           parseAssignment());
+  }
+
+  return Left;
+}
+
+ast::ASTPtr Parser::parseTernary() {
+  auto Cond = parseLogicalOr();
+  const auto T = CurrentToken;
+  if (!consumeToken(TokenKind::TK_Question)) {
+    return Cond;
+  }
+
+  auto Then = parseExpr();
+  expectToken(TokenKind::TK_Colon);
+  auto Else = parseTernary();
+
+  return std::make_unique<ast::TernaryCond>(std::move(Cond), std::move(Then),
+                                            std::move(Else));
+}
+
+ast::ASTPtr Parser::parseLogicalOr() { return nullptr; }
+
 } // namespace fantac::parse

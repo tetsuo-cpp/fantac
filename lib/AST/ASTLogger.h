@@ -19,6 +19,7 @@ public:
   virtual void visit(VariableDecl &AST) override;
   virtual void visit(BinaryOp &AST) override;
   virtual void visit(IfCond &AST) override;
+  virtual void visit(TernaryCond &AST) override;
   virtual void visit(NumberLiteral &AST) override;
   virtual void visit(StringLiteral &AST) override;
   virtual void visit(VariableRef &AST) override;
@@ -67,6 +68,12 @@ inline void ASTLogger::visit(BinaryOp &AST) {
 inline void ASTLogger::visit(IfCond &AST) {
   Logger->info("IfCond: {}.");
 
+  if (AST.Condition) {
+    AST.Condition->accept(*this);
+  }
+
+  Logger->info("IfCond: Then.");
+
   for (const auto &Instruction : AST.Then) {
     if (Instruction) {
       Instruction->accept(*this);
@@ -82,6 +89,28 @@ inline void ASTLogger::visit(IfCond &AST) {
   }
 
   Logger->info("IfCond: End.");
+}
+
+inline void ASTLogger::visit(TernaryCond &AST) {
+  Logger->info("TernaryCond: {}.");
+
+  if (AST.Condition) {
+    AST.Condition->accept(*this);
+  }
+
+  Logger->info("TernaryCond: Then.");
+
+  if (AST.Then) {
+    AST.Then->accept(*this);
+  }
+
+  Logger->info("TernaryCond: Else.");
+
+  if (AST.Else) {
+    AST.Else->accept(*this);
+  }
+
+  Logger->info("TernaryCond: End.");
 }
 
 inline void ASTLogger::visit(NumberLiteral &AST) {

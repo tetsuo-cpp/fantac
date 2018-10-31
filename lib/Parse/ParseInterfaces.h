@@ -36,6 +36,7 @@ enum class TokenKind {
   TK_Comma,
   TK_Semicolon,
   TK_Colon,
+  TK_Question,
   // Operators.
   TK_Add,
   TK_AddEq,
@@ -115,6 +116,8 @@ inline std::string tokenKindToString(TokenKind Kind) {
     return "Semicolon";
   case TokenKind::TK_Colon:
     return "Colon";
+  case TokenKind::TK_Question:
+    return "Question";
   case TokenKind::TK_Add:
     return "Add";
   case TokenKind::TK_AddEq:

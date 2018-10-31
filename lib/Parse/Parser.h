@@ -25,6 +25,9 @@ private:
   ast::ASTPtr parseForLoop();
   ast::ASTPtr parseExpr();
   ast::ASTPtr parsePrimaryExpr();
+  ast::ASTPtr parseAssignment();
+  ast::ASTPtr parseTernary();
+  ast::ASTPtr parseLogicalOr();
 
   ILexer &Lexer;
   Token CurrentToken;
