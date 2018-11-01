@@ -28,6 +28,16 @@ private:
   ast::ASTPtr parseAssignment();
   ast::ASTPtr parseTernary();
   ast::ASTPtr parseLogicalOr();
+  ast::ASTPtr parseLogicalAnd();
+  ast::ASTPtr parseBitwiseOr();
+  ast::ASTPtr parseBitwiseXor();
+  ast::ASTPtr parseBitwiseAnd();
+  ast::ASTPtr parseEquality();
+  ast::ASTPtr parseRelational();
+  ast::ASTPtr parseShift();
+  ast::ASTPtr parseAddition();
+  ast::ASTPtr parseMultiplication();
+  ast::ASTPtr parseUnary();
 
   ILexer &Lexer;
   Token CurrentToken;
