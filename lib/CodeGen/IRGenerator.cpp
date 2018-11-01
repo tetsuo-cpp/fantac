@@ -77,6 +77,8 @@ llvm::AllocaInst *IRGenerator::createEntryBlockAlloca(
   return B.CreateAlloca(Type, nullptr, VariableName);
 }
 
+void IRGenerator::visit(ast::UnaryOp &AST) { static_cast<void>(AST); }
+
 void IRGenerator::visit(ast::BinaryOp &AST) { static_cast<void>(AST); }
 
 void IRGenerator::visit(ast::IfCond &AST) { static_cast<void>(AST); }

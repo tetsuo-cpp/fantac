@@ -305,9 +305,9 @@ ast::ASTPtr Parser::parseLogicalOr() {
 
 ast::ASTPtr Parser::parseLogicalAnd() {
   auto Left = parseBitwiseOr();
-  const auto T = CurrentToken;
+  auto Operator = CurrentToken.Value;
   while (consumeToken(TokenKind::TK_And)) {
-    Left = std::make_unique<ast::BinaryOp>(T.Value, std::move(Left),
+    Left = std::make_unique<ast::BinaryOp>(std::move(Operator), std::move(Left),
                                            parseLogicalAnd());
   }
 
@@ -330,7 +330,7 @@ ast::ASTPtr Parser::parseBitwiseXor() {
   auto Operator = CurrentToken.Value;
   while (consumeToken(TokenKind::TK_Xor)) {
     Left = std::make_unique<ast::BinaryOp>(std::move(Operator), std::move(Left),
-                                           parseBitwiseXor());
+                                           parseBitwiseAnd());
   }
 
   return Left;
@@ -429,7 +429,22 @@ ast::ASTPtr Parser::parseUnary() {
                                            parseUnary());
   }
 
-  return nullptr;
+  if (consumeToken(TokenKind::TK_Multiply) || consumeToken(TokenKind::TK_Add) ||
+      consumeToken(TokenKind::TK_Not) || consumeToken(TokenKind::TK_SizeOf)) {
+    return std::make_unique<ast::UnaryOp>(std::move(Operator), parseUnary());
+  }
+
+  if (consumeToken(TokenKind::TK_Increment) ||
+      consumeToken(TokenKind::TK_Decrement)) {
+    std::string ShortenedOperator{Operator.front()};
+    auto One = std::make_unique<ast::NumberLiteral>(1);
+    return std::make_unique<ast::BinaryOp>(std::move(ShortenedOperator),
+                                           parseUnary(), std::move(One));
+  }
+
+  return parsePostfix();
 }
+
+ast::ASTPtr Parser::parsePostfix() { return nullptr; }
 
 } // namespace fantac::parse

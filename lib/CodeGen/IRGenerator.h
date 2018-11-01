@@ -18,6 +18,7 @@ public:
   virtual void visit(ast::FunctionDecl &AST) override;
   virtual void visit(ast::FunctionDef &AST) override;
   virtual void visit(ast::VariableDecl &AST) override;
+  virtual void visit(ast::UnaryOp &AST) override;
   virtual void visit(ast::BinaryOp &AST) override;
   virtual void visit(ast::IfCond &AST) override;
   virtual void visit(ast::TernaryCond &AST) override;

@@ -9,6 +9,7 @@ namespace fantac::ast {
 struct FunctionDecl;
 struct FunctionDef;
 struct VariableDecl;
+struct UnaryOp;
 struct BinaryOp;
 struct IfCond;
 struct TernaryCond;
@@ -26,6 +27,7 @@ public:
   virtual void visit(FunctionDecl &AST) = 0;
   virtual void visit(FunctionDef &AST) = 0;
   virtual void visit(VariableDecl &AST) = 0;
+  virtual void visit(UnaryOp &AST) = 0;
   virtual void visit(BinaryOp &AST) = 0;
   virtual void visit(IfCond &AST) = 0;
   virtual void visit(TernaryCond &AST) = 0;
@@ -122,7 +124,25 @@ struct VariableDecl : public IAST {
 
   const CTypeKind Type;
   const std::string Name;
-  const ASTPtr ValueExpr;
+  const ASTPtr AssignmentExpr;
+};
+
+struct UnaryOp : public IAST {
+  template <typename TString>
+  UnaryOp(TString &&Operator, ASTPtr &&Expr)
+      : Operator(std::forward<TString>(Operator)), Expr(std::move(Expr)) {}
+
+  // IAST impl.
+  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+
+  template <typename TStream>
+  friend TStream &operator<<(TStream &Stream, const UnaryOp &U) {
+    Stream << "{Operator=" << U.Operator << "}";
+    return Stream;
+  }
+
+  const std::string Operator;
+  const ASTPtr Expr;
 };
 
 struct BinaryOp : public IAST {

@@ -17,7 +17,7 @@ const std::vector<std::pair<char, TokenKind>> SymbolMappings = {
     {'>', TokenKind::TK_GreaterThan}, {'=', TokenKind::TK_Assign},
     {'.', TokenKind::TK_Period},      {'%', TokenKind::TK_Modulus},
     {'&', TokenKind::TK_And},         {'|', TokenKind::TK_Or},
-    {'^', TokenKind::TK_Xor}};
+    {'^', TokenKind::TK_Xor},         {'!', TokenKind::TK_Not}};
 
 const std::vector<std::pair<std::string, TokenKind>> CompoundSymbolMappings = {
     {"+=", TokenKind::TK_AddEq},         {"-=", TokenKind::TK_SubtractEq},
@@ -31,11 +31,9 @@ const std::vector<std::pair<std::string, TokenKind>> CompoundSymbolMappings = {
     {"&&", TokenKind::TK_LogicalAnd},    {"||", TokenKind::TK_LogicalOr}};
 
 const std::vector<std::pair<std::string, TokenKind>> KeywordMappings = {
-    {"if", TokenKind::TK_If},
-    {"else", TokenKind::TK_Else},
-    {"for", TokenKind::TK_For},
-    {"while", TokenKind::TK_While},
-    {"return", TokenKind::TK_Return}};
+    {"if", TokenKind::TK_If},         {"else", TokenKind::TK_Else},
+    {"for", TokenKind::TK_For},       {"while", TokenKind::TK_While},
+    {"return", TokenKind::TK_Return}, {"sizeof", TokenKind::TK_SizeOf}};
 
 std::pair<bool, TokenKind> isSymbol(char Char) {
   const auto SymbolMappingIter =

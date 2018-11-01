@@ -17,6 +17,7 @@ public:
   virtual void visit(FunctionDecl &AST) override;
   virtual void visit(FunctionDef &AST) override;
   virtual void visit(VariableDecl &AST) override;
+  virtual void visit(UnaryOp &AST) override;
   virtual void visit(BinaryOp &AST) override;
   virtual void visit(IfCond &AST) override;
   virtual void visit(TernaryCond &AST) override;
@@ -51,6 +52,14 @@ inline void ASTLogger::visit(FunctionDef &AST) {
 
 inline void ASTLogger::visit(VariableDecl &AST) {
   Logger->info("VariableDecl: {}.", AST);
+}
+
+inline void ASTLogger::visit(UnaryOp &AST) {
+  Logger->info("UnaryOp: {}.", AST);
+
+  if (AST.Expr) {
+    AST.Expr->accept(*this);
+  }
 }
 
 inline void ASTLogger::visit(BinaryOp &AST) {

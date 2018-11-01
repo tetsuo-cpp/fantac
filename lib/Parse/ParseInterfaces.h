@@ -28,6 +28,7 @@ enum class TokenKind {
   TK_For,
   TK_While,
   TK_Return,
+  TK_SizeOf,
   // Symbols.
   TK_OpenBrace,
   TK_CloseBrace,
@@ -70,6 +71,7 @@ enum class TokenKind {
   TK_XorEq,
   TK_LogicalAnd,
   TK_LogicalOr,
+  TK_Not,
   // Postfix.
   TK_Period,
   TK_Arrow,
@@ -102,6 +104,8 @@ inline std::string tokenKindToString(TokenKind Kind) {
     return "While";
   case TokenKind::TK_Return:
     return "Return";
+  case TokenKind::TK_SizeOf:
+    return "SizeOf";
   case TokenKind::TK_OpenBrace:
     return "OpenBrace";
   case TokenKind::TK_CloseBrace:
@@ -176,6 +180,8 @@ inline std::string tokenKindToString(TokenKind Kind) {
     return "LogicalAnd";
   case TokenKind::TK_LogicalOr:
     return "LogicalOr";
+  case TokenKind::TK_Not:
+    return "Not";
   case TokenKind::TK_Period:
     return "Period";
   case TokenKind::TK_Arrow:

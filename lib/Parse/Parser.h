@@ -38,6 +38,7 @@ private:
   ast::ASTPtr parseAddition();
   ast::ASTPtr parseMultiplication();
   ast::ASTPtr parseUnary();
+  ast::ASTPtr parsePostfix();
 
   ILexer &Lexer;
   Token CurrentToken;
