@@ -77,6 +77,8 @@ enum class TokenKind {
   TK_Arrow,
   TK_Increment,
   TK_Decrement,
+  TK_OpenSquareBracket,
+  TK_CloseSquareBracket,
   // End of file.
   TK_EOF,
   TK_None
@@ -190,6 +192,10 @@ inline std::string tokenKindToString(TokenKind Kind) {
     return "Increment";
   case TokenKind::TK_Decrement:
     return "Decrement";
+  case TokenKind::TK_OpenSquareBracket:
+    return "OpenSquareBracket";
+  case TokenKind::TK_CloseSquareBracket:
+    return "CloseSquareBracket";
   case TokenKind::TK_EOF:
     return "EOF";
   case TokenKind::TK_None:

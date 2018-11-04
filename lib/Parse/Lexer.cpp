@@ -28,7 +28,8 @@ const std::vector<std::pair<std::string, TokenKind>> CompoundSymbolMappings = {
     {"<<=", TokenKind::TK_ShiftLeftEq},  {">>", TokenKind::TK_ShiftRight},
     {">>=", TokenKind::TK_ShiftRightEq}, {"&=", TokenKind::TK_AndEq},
     {"|=", TokenKind::TK_OrEq},          {"^=", TokenKind::TK_XorEq},
-    {"&&", TokenKind::TK_LogicalAnd},    {"||", TokenKind::TK_LogicalOr}};
+    {"&&", TokenKind::TK_LogicalAnd},    {"||", TokenKind::TK_LogicalOr},
+    {"->", TokenKind::TK_Arrow}};
 
 const std::vector<std::pair<std::string, TokenKind>> KeywordMappings = {
     {"if", TokenKind::TK_If},         {"else", TokenKind::TK_Else},
@@ -198,7 +199,7 @@ void Lexer::lexChar(Token &Tok) {
         "Encountered opening single quote at the end of source.");
   }
 
-  std::string CharLiteral(1, CurrentChar);
+  std::string CharLiteral{CurrentChar};
 
   if (!readNextChar() && CurrentChar != '\'') {
     throw ParseException(

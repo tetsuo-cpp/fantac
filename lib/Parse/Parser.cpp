@@ -79,6 +79,8 @@ void Parser::expectToken(TokenKind Kind) {
 }
 
 ast::ASTPtr Parser::parseFunction(ast::CTypeKind Return, std::string &&Name) {
+  Logger->info("Parsing function.");
+
   // Parse arguments.
   std::vector<std::pair<std::string, ast::CTypeKind>> Args;
   while (!consumeToken(TokenKind::TK_CloseParen)) {
@@ -145,6 +147,8 @@ ast::ASTPtr Parser::parseStatement() {
 }
 
 ast::ASTPtr Parser::parseVariableDecl(ast::CTypeKind Type) {
+  Logger->info("Parsing variable declaration.");
+
   expectToken(TokenKind::TK_Identifier);
   auto Name = CurrentToken.Value;
   expectToken(TokenKind::TK_Identifier);
@@ -153,12 +157,12 @@ ast::ASTPtr Parser::parseVariableDecl(ast::CTypeKind Type) {
   while (!consumeToken(TokenKind::TK_Semicolon) && Lexer.lex(CurrentToken)) {
   }
 
-  Logger->info("Found variable declaration.");
-
   return std::make_unique<ast::VariableDecl>(Type, std::move(Name));
 }
 
 ast::ASTPtr Parser::parseIfCond() {
+  Logger->info("Parsing if conditional.");
+
   expectToken(TokenKind::TK_OpenParen);
   auto Cond = parseExpr();
   expectToken(TokenKind::TK_CloseParen);
@@ -189,6 +193,8 @@ ast::ASTPtr Parser::parseIfCond() {
 }
 
 ast::ASTPtr Parser::parseWhileLoop() {
+  Logger->info("Parsing while loop.");
+
   expectToken(TokenKind::TK_OpenParen);
   auto Cond = parseExpr();
   expectToken(TokenKind::TK_CloseParen);
@@ -208,6 +214,8 @@ ast::ASTPtr Parser::parseWhileLoop() {
 }
 
 ast::ASTPtr Parser::parseForLoop() {
+  Logger->info("Parsing for loop.");
+
   expectToken(TokenKind::TK_OpenParen);
   auto Init = parseStatement();
   auto Cond = parseExpr();
@@ -231,17 +239,21 @@ ast::ASTPtr Parser::parseForLoop() {
 }
 
 ast::ASTPtr Parser::parseExpr() {
-  // Lots more to do here. Just get it working for the moment.
-  auto Left = parsePrimaryExpr();
+  Logger->info("Parsing expression.");
+
+  auto Left = parseAssignment();
   auto Operator = CurrentToken.Value;
-  Lexer.lex(CurrentToken);
-  auto Right = parsePrimaryExpr();
+  if (!consumeToken(TokenKind::TK_Comma)) {
+    return Left;
+  }
 
   return std::make_unique<ast::BinaryOp>(std::move(Operator), std::move(Left),
-                                         std::move(Right));
+                                         parseExpr());
 }
 
 ast::ASTPtr Parser::parsePrimaryExpr() {
+  Logger->info("Parsing primary expression.");
+
   // TODO: Support floats, function calls and more.
   const auto Kind = CurrentToken.Kind;
   Lexer.lex(CurrentToken);
@@ -258,10 +270,12 @@ ast::ASTPtr Parser::parsePrimaryExpr() {
 }
 
 ast::ASTPtr Parser::parseAssignment() {
+  Logger->info("Parsing assignment expression.");
+
   auto Left = parseTernary();
   auto Operator = CurrentToken.Value;
 
-  if (consumeToken(TokenKind::TK_Equals) ||
+  if (consumeToken(TokenKind::TK_Assign) ||
       consumeToken(TokenKind::TK_MultiplyEq) ||
       consumeToken(TokenKind::TK_DivideEq) ||
       consumeToken(TokenKind::TK_AddEq) ||
@@ -279,6 +293,8 @@ ast::ASTPtr Parser::parseAssignment() {
 }
 
 ast::ASTPtr Parser::parseTernary() {
+  Logger->info("Parsing ternary expression.");
+
   auto Cond = parseLogicalOr();
   if (!consumeToken(TokenKind::TK_Question)) {
     return Cond;
@@ -293,6 +309,8 @@ ast::ASTPtr Parser::parseTernary() {
 }
 
 ast::ASTPtr Parser::parseLogicalOr() {
+  Logger->info("Parsing logical or expression.");
+
   auto Cond = parseLogicalAnd();
   auto Operator = CurrentToken.Value;
   while (consumeToken(TokenKind::TK_LogicalOr)) {
@@ -304,6 +322,8 @@ ast::ASTPtr Parser::parseLogicalOr() {
 }
 
 ast::ASTPtr Parser::parseLogicalAnd() {
+  Logger->info("Parsing logical and expression.");
+
   auto Left = parseBitwiseOr();
   auto Operator = CurrentToken.Value;
   while (consumeToken(TokenKind::TK_And)) {
@@ -315,6 +335,8 @@ ast::ASTPtr Parser::parseLogicalAnd() {
 }
 
 ast::ASTPtr Parser::parseBitwiseOr() {
+  Logger->info("Parsing bitwise or expression.");
+
   auto Left = parseBitwiseXor();
   auto Operator = CurrentToken.Value;
   while (consumeToken(TokenKind::TK_Or)) {
@@ -326,6 +348,8 @@ ast::ASTPtr Parser::parseBitwiseOr() {
 }
 
 ast::ASTPtr Parser::parseBitwiseXor() {
+  Logger->info("Parsing bitwise xor expression.");
+
   auto Left = parseBitwiseAnd();
   auto Operator = CurrentToken.Value;
   while (consumeToken(TokenKind::TK_Xor)) {
@@ -337,6 +361,8 @@ ast::ASTPtr Parser::parseBitwiseXor() {
 }
 
 ast::ASTPtr Parser::parseBitwiseAnd() {
+  Logger->info("Parsing bitwise and expression.");
+
   auto Left = parseEquality();
   auto Operator = CurrentToken.Value;
   while (consumeToken(TokenKind::TK_And)) {
@@ -348,6 +374,8 @@ ast::ASTPtr Parser::parseBitwiseAnd() {
 }
 
 ast::ASTPtr Parser::parseEquality() {
+  Logger->info("Parsing equality expression.");
+
   auto Left = parseRelational();
   while (true) {
     auto Operator = CurrentToken.Value;
@@ -362,6 +390,8 @@ ast::ASTPtr Parser::parseEquality() {
 }
 
 ast::ASTPtr Parser::parseRelational() {
+  Logger->info("Parsing relational expression.");
+
   auto Left = parseShift();
   while (true) {
     auto Operator = CurrentToken.Value;
@@ -378,6 +408,8 @@ ast::ASTPtr Parser::parseRelational() {
 }
 
 ast::ASTPtr Parser::parseShift() {
+  Logger->info("Parsing shift expression.");
+
   auto Left = parseAddition();
   while (true) {
     auto Operator = CurrentToken.Value;
@@ -392,6 +424,8 @@ ast::ASTPtr Parser::parseShift() {
 }
 
 ast::ASTPtr Parser::parseAddition() {
+  Logger->info("Parsing addition expression.");
+
   auto Left = parseMultiplication();
   while (true) {
     auto Operator = CurrentToken.Value;
@@ -406,6 +440,8 @@ ast::ASTPtr Parser::parseAddition() {
 }
 
 ast::ASTPtr Parser::parseMultiplication() {
+  Logger->info("Parsing multiplication expression.");
+
   auto Left = parseUnary();
   while (true) {
     auto Operator = CurrentToken.Value;
@@ -421,6 +457,8 @@ ast::ASTPtr Parser::parseMultiplication() {
 }
 
 ast::ASTPtr Parser::parseUnary() {
+  Logger->info("Parsing unary expression.");
+
   auto Operator = CurrentToken.Value;
 
   if (consumeToken(TokenKind::TK_Subtract)) {
@@ -445,6 +483,42 @@ ast::ASTPtr Parser::parseUnary() {
   return parsePostfix();
 }
 
-ast::ASTPtr Parser::parsePostfix() { return nullptr; }
+ast::ASTPtr Parser::parsePostfix() {
+  Logger->info("Parsing postfix expression.");
+
+  auto Left = parsePrimaryExpr();
+  while (true) {
+    auto Operator = CurrentToken.Value;
+
+    // Post increment.
+    if (consumeToken(TokenKind::TK_Increment)) {
+      continue;
+    }
+
+    // Post decrement.
+    if (consumeToken(TokenKind::TK_Decrement)) {
+      continue;
+    }
+
+    // Member access.
+    if (consumeToken(TokenKind::TK_Period)) {
+      continue;
+    }
+
+    // Member access thru pointer.
+    if (consumeToken(TokenKind::TK_Arrow)) {
+      continue;
+    }
+
+    // Array access.
+    if (consumeToken(TokenKind::TK_OpenSquareBracket)) {
+      continue;
+    }
+
+    break;
+  }
+
+  return Left;
+}
 
 } // namespace fantac::parse

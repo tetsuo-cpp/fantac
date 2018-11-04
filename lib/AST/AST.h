@@ -208,9 +208,7 @@ struct ForLoop : public IAST {
   // IAST impl.
   virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
-  const ASTPtr Init;
-  const ASTPtr Condition;
-  const ASTPtr Iteration;
+  const ASTPtr Init, Condition, Iteration;
   const std::vector<ASTPtr> Body;
 };
 
