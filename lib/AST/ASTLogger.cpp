@@ -25,6 +25,12 @@ void ASTLogger::visit(FunctionDef &AST) {
 
 void ASTLogger::visit(VariableDecl &AST) {
   Logger->info("VariableDecl: {}.", AST);
+
+  if (AST.AssignmentExpr) {
+    AST.AssignmentExpr->accept(*this);
+  } else {
+    Logger->info("VariableDecl: No assignment.");
+  }
 }
 
 void ASTLogger::visit(UnaryOp &AST) {

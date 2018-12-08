@@ -69,8 +69,9 @@ struct FunctionDef : public IAST {
 
 struct VariableDecl : public IAST {
   template <typename T>
-  VariableDecl(CTypeKind Type, T &&Name)
-      : Type(Type), Name(std::forward<T>(Name)) {}
+  VariableDecl(CTypeKind Type, T &&Name, ASTPtr &&AssignmentExpr = nullptr)
+      : Type(Type), Name(std::forward<T>(Name)),
+        AssignmentExpr(std::move(AssignmentExpr)) {}
 
   // IAST impl.
   virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }

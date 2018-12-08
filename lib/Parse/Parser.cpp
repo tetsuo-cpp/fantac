@@ -155,8 +155,11 @@ ast::ASTPtr Parser::parseVariableDecl(ast::CTypeKind Type) {
   auto Name = CurrentToken.Value;
   expectToken(TokenKind::TK_Identifier);
 
-  // TODO: Parse assignments.
-  while (!consumeToken(TokenKind::TK_Semicolon) && Lexer.lex(CurrentToken)) {
+  // Parse assignment.
+  if (consumeToken(TokenKind::TK_Assign)) {
+    auto AssignmentExpr = parseExpr();
+    return std::make_unique<ast::VariableDecl>(Type, std::move(Name),
+                                               std::move(AssignmentExpr));
   }
 
   return std::make_unique<ast::VariableDecl>(Type, std::move(Name));
@@ -543,8 +546,14 @@ ast::ASTPtr Parser::parseFunctionCall(std::string &&FunctionName) {
   Logger->info("Parsing function call.");
 
   std::vector<ast::ASTPtr> Args;
+  bool LeadingArg = true;
   while (!consumeToken(TokenKind::TK_CloseParen)) {
-    Args.push_back(parseExpr());
+    if (!LeadingArg) {
+      expectToken(TokenKind::TK_Comma);
+    }
+
+    LeadingArg = false;
+    Args.push_back(parseAssignment());
   }
 
   return std::make_unique<ast::FunctionCall>(std::move(FunctionName),
