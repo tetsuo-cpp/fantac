@@ -546,13 +546,11 @@ ast::ASTPtr Parser::parseFunctionCall(std::string &&FunctionName) {
   Logger->info("Parsing function call.");
 
   std::vector<ast::ASTPtr> Args;
-  bool LeadingArg = true;
   while (!consumeToken(TokenKind::TK_CloseParen)) {
-    if (!LeadingArg) {
+    if (!Args.empty()) {
       expectToken(TokenKind::TK_Comma);
     }
 
-    LeadingArg = false;
     Args.push_back(parseAssignment());
   }
 
