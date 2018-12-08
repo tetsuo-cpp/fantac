@@ -3,6 +3,7 @@
 #include <AST/ASTLogger.h>
 #include <CodeGen/IRGenerator.h>
 #include <Parse/Lexer.h>
+#include <Parse/Parser.h>
 
 #include <fstream>
 
@@ -24,8 +25,9 @@ void FantaC::run(const std::string &FileName) {
 
   try {
     // Construct parsing components.
-    Lexer.reset(new parse::Lexer(&*Source.begin(), &*(Source.end() - 1), LF));
-    Parser.reset(new parse::Parser(*Lexer, LF));
+    Lexer = std::make_unique<parse::Lexer>(&*Source.begin(),
+                                           &*(Source.end() - 1), LF);
+    Parser = std::make_unique<parse::Parser>(*Lexer, LF);
 
     Logger->info("Parsing to AST.");
 

@@ -1,5 +1,7 @@
 #include "Parser.h"
 
+#include <AST/AST.h>
+
 #include <algorithm>
 #include <cassert>
 
@@ -30,7 +32,7 @@ ast::CTypeKind stringToCTypeKind(const std::string &Type) {
 
 } // namespace
 
-Parser::Parser(ILexer &Lexer, util::LoggerFactory &LF)
+Parser::Parser(ILexer &Lexer, util::ILoggerFactory &LF)
     : Lexer(Lexer), Logger(LF.createLogger("Parser")) {
   Lexer.lex(CurrentToken);
 }
@@ -242,12 +244,12 @@ ast::ASTPtr Parser::parseExpr() {
   Logger->info("Parsing expression.");
 
   auto Left = parseAssignment();
-  auto Operator = CurrentToken.Value;
+  const auto Operator = CurrentToken.Kind;
   if (!consumeToken(TokenKind::TK_Comma)) {
     return Left;
   }
 
-  return std::make_unique<ast::BinaryOp>(std::move(Operator), std::move(Left),
+  return std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
                                          parseExpr());
 }
 
@@ -273,7 +275,7 @@ ast::ASTPtr Parser::parseAssignment() {
   Logger->info("Parsing assignment expression.");
 
   auto Left = parseTernary();
-  auto Operator = CurrentToken.Value;
+  const auto Operator = CurrentToken.Kind;
 
   if (consumeToken(TokenKind::TK_Assign) ||
       consumeToken(TokenKind::TK_MultiplyEq) ||
@@ -285,7 +287,7 @@ ast::ASTPtr Parser::parseAssignment() {
       consumeToken(TokenKind::TK_XorEq) ||
       consumeToken(TokenKind::TK_ShiftLeftEq) ||
       consumeToken(TokenKind::TK_ShiftRightEq)) {
-    return std::make_unique<ast::BinaryOp>(std::move(Operator), std::move(Left),
+    return std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
                                            parseAssignment());
   }
 
@@ -312,9 +314,9 @@ ast::ASTPtr Parser::parseLogicalOr() {
   Logger->info("Parsing logical or expression.");
 
   auto Cond = parseLogicalAnd();
-  auto Operator = CurrentToken.Value;
+  const auto Operator = CurrentToken.Kind;
   while (consumeToken(TokenKind::TK_LogicalOr)) {
-    Cond = std::make_unique<ast::BinaryOp>(std::move(Operator), std::move(Cond),
+    Cond = std::make_unique<ast::BinaryOp>(Operator, std::move(Cond),
                                            parseLogicalAnd());
   }
 
@@ -325,9 +327,9 @@ ast::ASTPtr Parser::parseLogicalAnd() {
   Logger->info("Parsing logical and expression.");
 
   auto Left = parseBitwiseOr();
-  auto Operator = CurrentToken.Value;
+  const auto Operator = CurrentToken.Kind;
   while (consumeToken(TokenKind::TK_And)) {
-    Left = std::make_unique<ast::BinaryOp>(std::move(Operator), std::move(Left),
+    Left = std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
                                            parseLogicalAnd());
   }
 
@@ -338,9 +340,9 @@ ast::ASTPtr Parser::parseBitwiseOr() {
   Logger->info("Parsing bitwise or expression.");
 
   auto Left = parseBitwiseXor();
-  auto Operator = CurrentToken.Value;
+  const auto Operator = CurrentToken.Kind;
   while (consumeToken(TokenKind::TK_Or)) {
-    Left = std::make_unique<ast::BinaryOp>(std::move(Operator), std::move(Left),
+    Left = std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
                                            parseBitwiseXor());
   }
 
@@ -351,9 +353,9 @@ ast::ASTPtr Parser::parseBitwiseXor() {
   Logger->info("Parsing bitwise xor expression.");
 
   auto Left = parseBitwiseAnd();
-  auto Operator = CurrentToken.Value;
+  const auto Operator = CurrentToken.Kind;
   while (consumeToken(TokenKind::TK_Xor)) {
-    Left = std::make_unique<ast::BinaryOp>(std::move(Operator), std::move(Left),
+    Left = std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
                                            parseBitwiseAnd());
   }
 
@@ -364,9 +366,9 @@ ast::ASTPtr Parser::parseBitwiseAnd() {
   Logger->info("Parsing bitwise and expression.");
 
   auto Left = parseEquality();
-  auto Operator = CurrentToken.Value;
+  const auto Operator = CurrentToken.Kind;
   while (consumeToken(TokenKind::TK_And)) {
-    Left = std::make_unique<ast::BinaryOp>(std::move(Operator), std::move(Left),
+    Left = std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
                                            parseEquality());
   }
 
@@ -378,11 +380,11 @@ ast::ASTPtr Parser::parseEquality() {
 
   auto Left = parseRelational();
   while (true) {
-    auto Operator = CurrentToken.Value;
+    const auto Operator = CurrentToken.Kind;
     if (consumeToken(TokenKind::TK_Equals) ||
         consumeToken(TokenKind::TK_NotEquals)) {
-      Left = std::make_unique<ast::BinaryOp>(
-          std::move(Operator), std::move(Left), parseRelational());
+      Left = std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
+                                             parseRelational());
     } else {
       return Left;
     }
@@ -394,13 +396,13 @@ ast::ASTPtr Parser::parseRelational() {
 
   auto Left = parseShift();
   while (true) {
-    auto Operator = CurrentToken.Value;
+    const auto Operator = CurrentToken.Kind;
     if (consumeToken(TokenKind::TK_LessThan) ||
         consumeToken(TokenKind::TK_GreaterThan) ||
         consumeToken(TokenKind::TK_LessThanEq) ||
         consumeToken(TokenKind::TK_GreaterThanEq)) {
-      Left = std::make_unique<ast::BinaryOp>(std::move(Operator),
-                                             std::move(Left), parseShift());
+      Left = std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
+                                             parseShift());
     } else {
       return Left;
     }
@@ -412,11 +414,11 @@ ast::ASTPtr Parser::parseShift() {
 
   auto Left = parseAddition();
   while (true) {
-    auto Operator = CurrentToken.Value;
+    const auto Operator = CurrentToken.Kind;
     if (consumeToken(TokenKind::TK_ShiftLeft) ||
         consumeToken(TokenKind::TK_ShiftRight)) {
-      Left = std::make_unique<ast::BinaryOp>(std::move(Operator),
-                                             std::move(Left), parseAddition());
+      Left = std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
+                                             parseAddition());
     } else {
       return Left;
     }
@@ -428,11 +430,11 @@ ast::ASTPtr Parser::parseAddition() {
 
   auto Left = parseMultiplication();
   while (true) {
-    auto Operator = CurrentToken.Value;
+    const auto Operator = CurrentToken.Kind;
     if (consumeToken(TokenKind::TK_Add) ||
         consumeToken(TokenKind::TK_Subtract)) {
-      Left = std::make_unique<ast::BinaryOp>(
-          std::move(Operator), std::move(Left), parseMultiplication());
+      Left = std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
+                                             parseMultiplication());
     } else {
       return Left;
     }
@@ -444,12 +446,12 @@ ast::ASTPtr Parser::parseMultiplication() {
 
   auto Left = parseUnary();
   while (true) {
-    auto Operator = CurrentToken.Value;
+    const auto Operator = CurrentToken.Kind;
     if (consumeToken(TokenKind::TK_Multiply) ||
         consumeToken(TokenKind::TK_Divide) ||
         consumeToken(TokenKind::TK_Modulus)) {
-      Left = std::make_unique<ast::BinaryOp>(std::move(Operator),
-                                             std::move(Left), parseUnary());
+      Left = std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
+                                             parseUnary());
     } else {
       return Left;
     }
@@ -459,24 +461,24 @@ ast::ASTPtr Parser::parseMultiplication() {
 ast::ASTPtr Parser::parseUnary() {
   Logger->info("Parsing unary expression.");
 
-  auto Operator = CurrentToken.Value;
-
+  const auto Operator = CurrentToken.Kind;
   if (consumeToken(TokenKind::TK_Subtract)) {
     auto Zero = std::make_unique<ast::NumberLiteral>(0);
-    return std::make_unique<ast::BinaryOp>(std::move(Operator), std::move(Zero),
+    return std::make_unique<ast::BinaryOp>(Operator, std::move(Zero),
                                            parseUnary());
   }
 
   if (consumeToken(TokenKind::TK_Multiply) || consumeToken(TokenKind::TK_Add) ||
       consumeToken(TokenKind::TK_Not) || consumeToken(TokenKind::TK_SizeOf)) {
-    return std::make_unique<ast::UnaryOp>(std::move(Operator), parseUnary());
+    return std::make_unique<ast::UnaryOp>(Operator, parseUnary());
   }
 
   if (consumeToken(TokenKind::TK_Increment) ||
       consumeToken(TokenKind::TK_Decrement)) {
-    std::string ShortenedOperator{Operator.front()};
     auto One = std::make_unique<ast::NumberLiteral>(1);
-    return std::make_unique<ast::BinaryOp>(std::move(ShortenedOperator),
+    return std::make_unique<ast::BinaryOp>(Operator == TokenKind::TK_Increment
+                                               ? TokenKind::TK_Add
+                                               : TokenKind::TK_Subtract,
                                            parseUnary(), std::move(One));
   }
 
@@ -488,15 +490,12 @@ ast::ASTPtr Parser::parsePostfix() {
 
   auto Left = parsePrimaryExpr();
   while (true) {
-    auto Operator = CurrentToken.Value;
+    const auto Operator = CurrentToken.Kind;
 
-    // Post increment.
-    if (consumeToken(TokenKind::TK_Increment)) {
-      continue;
-    }
-
-    // Post decrement.
-    if (consumeToken(TokenKind::TK_Decrement)) {
+    // Post increment and decrement.
+    if (consumeToken(TokenKind::TK_Increment) ||
+        consumeToken(TokenKind::TK_Decrement)) {
+      Left = std::make_unique<ast::UnaryOp>(Operator, std::move(Left));
       continue;
     }
 

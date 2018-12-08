@@ -1,10 +1,6 @@
 #pragma once
 
-#include <spdlog/fmt/ostr.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/spdlog.h>
-
-#include <string>
+#include "UtilInterfaces.h"
 
 namespace fantac::util {
 
@@ -13,7 +9,7 @@ struct LoggerConfig {
   spdlog::level::level_enum LogLevel;
 };
 
-class LoggerFactory {
+class LoggerFactory : public ILoggerFactory {
 public:
   LoggerFactory(const LoggerConfig &Config)
       : Sink(std::make_shared<spdlog::sinks::stdout_color_sink_mt>()),

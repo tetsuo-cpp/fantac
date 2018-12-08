@@ -1,10 +1,12 @@
 #include "IRGenerator.h"
 
+#include <AST/AST.h>
+
 #include <llvm/IR/Verifier.h>
 
 namespace fantac::codegen {
 
-IRGenerator::IRGenerator(util::LoggerFactory &LF)
+IRGenerator::IRGenerator(util::ILoggerFactory &LF)
     : Builder(Context), Module("FantaC", Context),
       Logger(LF.createLogger("IRGenerator")) {}
 

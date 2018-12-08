@@ -2,13 +2,13 @@
 
 #include "ParseInterfaces.h"
 
-#include <Util/LoggerFactory.h>
+#include <Util/UtilInterfaces.h>
 
 namespace fantac::parse {
 
 class Lexer : public ILexer {
 public:
-  Lexer(const char *Begin, const char *End, util::LoggerFactory &LF);
+  Lexer(const char *Begin, const char *End, util::ILoggerFactory &LF);
   virtual ~Lexer() = default;
 
   virtual bool lex(Token &Tok) override;

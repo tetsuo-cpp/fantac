@@ -1,7 +1,7 @@
 #pragma once
 
-#include <AST/AST.h>
-#include <Util/LoggerFactory.h>
+#include <AST/ASTInterfaces.h>
+#include <Util/UtilInterfaces.h>
 
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/LLVMContext.h>
@@ -11,7 +11,7 @@ namespace fantac::codegen {
 
 class IRGenerator : public ast::IASTVisitor {
 public:
-  IRGenerator(util::LoggerFactory &LF);
+  IRGenerator(util::ILoggerFactory &LF);
   virtual ~IRGenerator();
 
   // IASTVisitor impl.

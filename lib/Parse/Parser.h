@@ -1,18 +1,19 @@
 #pragma once
 
 #include "ParseInterfaces.h"
+#include "Token.h"
 
-#include <AST/AST.h>
-#include <Util/LoggerFactory.h>
+#include <AST/ASTInterfaces.h>
+#include <Util/UtilInterfaces.h>
 
 namespace fantac::parse {
 
-class Parser {
+class Parser : public IParser {
 public:
-  Parser(ILexer &Lexer, util::LoggerFactory &LF);
+  Parser(ILexer &Lexer, util::ILoggerFactory &LF);
   virtual ~Parser() = default;
 
-  ast::ASTPtr parseTopLevelExpr();
+  ast::ASTPtr parseTopLevelExpr() override;
 
 private:
   bool consumeToken(TokenKind Kind);

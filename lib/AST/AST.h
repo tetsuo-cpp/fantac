@@ -1,51 +1,12 @@
 #pragma once
 
-#include <memory>
+#include <Parse/Token.h>
+
+#include "ASTInterfaces.h"
+
 #include <vector>
 
 namespace fantac::ast {
-
-// Fwd declare all AST nodes.
-struct FunctionDecl;
-struct FunctionDef;
-struct VariableDecl;
-struct UnaryOp;
-struct BinaryOp;
-struct IfCond;
-struct TernaryCond;
-struct NumberLiteral;
-struct StringLiteral;
-struct VariableRef;
-struct WhileLoop;
-struct ForLoop;
-
-// Visitor interface for walking the AST.
-class IASTVisitor {
-public:
-  virtual ~IASTVisitor() = default;
-
-  virtual void visit(FunctionDecl &AST) = 0;
-  virtual void visit(FunctionDef &AST) = 0;
-  virtual void visit(VariableDecl &AST) = 0;
-  virtual void visit(UnaryOp &AST) = 0;
-  virtual void visit(BinaryOp &AST) = 0;
-  virtual void visit(IfCond &AST) = 0;
-  virtual void visit(TernaryCond &AST) = 0;
-  virtual void visit(NumberLiteral &AST) = 0;
-  virtual void visit(StringLiteral &AST) = 0;
-  virtual void visit(VariableRef &AST) = 0;
-  virtual void visit(WhileLoop &AST) = 0;
-  virtual void visit(ForLoop &AST) = 0;
-};
-
-// Base class for all AST nodes.
-struct IAST {
-  virtual ~IAST() = default;
-
-  virtual void accept(IASTVisitor &Visitor) = 0;
-};
-
-using ASTPtr = std::unique_ptr<IAST>;
 
 enum class CTypeKind {
   CTK_Int,
@@ -57,16 +18,15 @@ enum class CTypeKind {
 };
 
 struct FunctionDecl : public IAST {
-  template <typename TName, typename TArgs>
-  FunctionDecl(TName &&Name, CTypeKind Return, TArgs &&Args)
-      : Name(std::forward<TName>(Name)), Return(Return),
-        Args(std::forward<TArgs>(Args)) {}
+  template <typename T0, typename T1>
+  FunctionDecl(T0 &&Name, CTypeKind Return, T1 &&Args)
+      : Name(std::forward<T0>(Name)), Return(Return),
+        Args(std::forward<T1>(Args)) {}
 
   // IAST impl.
   virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
-  template <typename TStream>
-  friend TStream &operator<<(TStream &Stream, const FunctionDecl &F) {
+  template <typename T> friend T &operator<<(T &Stream, const FunctionDecl &F) {
     Stream << "{Name=" << F.Name << ", Args=(";
     for (const auto &Arg : F.Args) {
       Stream << Arg.first;
@@ -88,18 +48,17 @@ struct FunctionDef : public IAST {
   FunctionDef(std::unique_ptr<FunctionDecl> &&Decl, std::vector<ASTPtr> &&Body)
       : Decl(std::move(Decl)), Body(std::move(Body)) {}
 
-  template <typename TName, typename TArgs>
-  FunctionDef(TName &&Name, CTypeKind Return, TArgs &&Args,
+  template <typename T0, typename T1>
+  FunctionDef(T0 &&Name, CTypeKind Return, T1 &&Args,
               std::vector<ASTPtr> &&Body)
-      : Decl(new FunctionDecl(std::forward<TName>(Name), Return,
-                              std::forward<TArgs>(Args))),
+      : Decl(new FunctionDecl(std::forward<T0>(Name), Return,
+                              std::forward<T1>(Args))),
         Body(std::move(Body)) {}
 
   // IAST impl.
   virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
-  template <typename TStream>
-  friend TStream &operator<<(TStream &Stream, const FunctionDef &F) {
+  template <typename T> friend T &operator<<(T &Stream, const FunctionDef &F) {
     Stream << "{Decl=" << *F.Decl << "}";
     return Stream;
   }
@@ -109,15 +68,14 @@ struct FunctionDef : public IAST {
 };
 
 struct VariableDecl : public IAST {
-  template <typename TName>
-  VariableDecl(CTypeKind Type, TName &&Name)
-      : Type(Type), Name(std::forward<TName>(Name)) {}
+  template <typename T>
+  VariableDecl(CTypeKind Type, T &&Name)
+      : Type(Type), Name(std::forward<T>(Name)) {}
 
   // IAST impl.
   virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
-  template <typename TStream>
-  friend TStream &operator<<(TStream &Stream, const VariableDecl &V) {
+  template <typename T> friend T &operator<<(T &Stream, const VariableDecl &V) {
     Stream << "{Name=" << V.Name << "}";
     return Stream;
   }
@@ -128,39 +86,34 @@ struct VariableDecl : public IAST {
 };
 
 struct UnaryOp : public IAST {
-  template <typename TString>
-  UnaryOp(TString &&Operator, ASTPtr &&Expr)
-      : Operator(std::forward<TString>(Operator)), Expr(std::move(Expr)) {}
+  UnaryOp(parse::TokenKind Operator, ASTPtr &&Expr)
+      : Operator(Operator), Expr(std::move(Expr)) {}
 
   // IAST impl.
   virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
-  template <typename TStream>
-  friend TStream &operator<<(TStream &Stream, const UnaryOp &U) {
-    Stream << "{Operator=" << U.Operator << "}";
+  template <typename T> friend T &operator<<(T &Stream, const UnaryOp &U) {
+    Stream << "{Operator=" << parse::tokenKindToString(U.Operator) << "}";
     return Stream;
   }
 
-  const std::string Operator;
+  const parse::TokenKind Operator;
   const ASTPtr Expr;
 };
 
 struct BinaryOp : public IAST {
-  template <typename TString>
-  BinaryOp(TString &&Operator, ASTPtr &&Left, ASTPtr &&Right)
-      : Operator(std::forward<TString>(Operator)), Left(std::move(Left)),
-        Right(std::move(Right)) {}
+  BinaryOp(parse::TokenKind Operator, ASTPtr &&Left, ASTPtr &&Right)
+      : Operator(Operator), Left(std::move(Left)), Right(std::move(Right)) {}
 
   // IAST impl.
   virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
-  template <typename TStream>
-  friend TStream &operator<<(TStream &Stream, const BinaryOp &B) {
-    Stream << "{Operator=" << B.Operator << "}";
+  template <typename T> friend T &operator<<(T &Stream, const BinaryOp &B) {
+    Stream << "{Operator=" << parse::tokenKindToString(B.Operator) << "}";
     return Stream;
   }
 
-  const std::string Operator;
+  const parse::TokenKind Operator;
   const ASTPtr Left, Right;
 };
 
@@ -185,7 +138,7 @@ struct TernaryCond : public IAST {
   // IAST impl.
   virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
-  ASTPtr Condition, Then, Else;
+  const ASTPtr Condition, Then, Else;
 };
 
 struct WhileLoop : public IAST {
@@ -213,13 +166,13 @@ struct ForLoop : public IAST {
 };
 
 struct NumberLiteral : public IAST {
-  NumberLiteral(unsigned int Value) : Value(Value) {}
+  explicit NumberLiteral(unsigned int Value) : Value(Value) {}
 
   // IAST impl.
   virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
-  template <typename TStream>
-  friend TStream &operator<<(TStream &Stream, const NumberLiteral &N) {
+  template <typename T>
+  friend T &operator<<(T &Stream, const NumberLiteral &N) {
     Stream << "{Value=" << N.Value << "}";
     return Stream;
   }
@@ -228,14 +181,14 @@ struct NumberLiteral : public IAST {
 };
 
 struct StringLiteral : public IAST {
-  template <typename TString>
-  StringLiteral(TString &&Value) : Value(std::forward<TString>(Value)) {}
+  template <typename T>
+  explicit StringLiteral(T &&Value) : Value(std::forward<T>(Value)) {}
 
   // IAST impl.
   virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
-  template <typename TStream>
-  friend TStream &operator<<(TStream &Stream, const StringLiteral &S) {
+  template <typename T>
+  friend T &operator<<(T &Stream, const StringLiteral &S) {
     Stream << "{Value=" << S.Value << "}";
     return Stream;
   }
@@ -244,14 +197,13 @@ struct StringLiteral : public IAST {
 };
 
 struct VariableRef : public IAST {
-  template <typename TString>
-  VariableRef(TString &&Name) : Name(std::forward<TString>(Name)) {}
+  template <typename T>
+  explicit VariableRef(T &&Name) : Name(std::forward<T>(Name)) {}
 
   // IAST impl.
   virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
-  template <typename TStream>
-  friend TStream &operator<<(TStream &Stream, const VariableRef &V) {
+  template <typename T> friend T &operator<<(T &Stream, const VariableRef &V) {
     Stream << "{Name=" << V.Name << "}";
     return Stream;
   }

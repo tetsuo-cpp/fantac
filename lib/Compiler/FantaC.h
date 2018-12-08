@@ -1,8 +1,7 @@
 #pragma once
 
-#include <AST/AST.h>
+#include <AST/ASTInterfaces.h>
 #include <Parse/ParseInterfaces.h>
-#include <Parse/Parser.h>
 #include <Util/LoggerFactory.h>
 
 #include <memory>
@@ -19,7 +18,7 @@ public:
 
 private:
   std::unique_ptr<parse::ILexer> Lexer;
-  std::unique_ptr<parse::Parser> Parser;
+  std::unique_ptr<parse::IParser> Parser;
   std::vector<std::unique_ptr<ast::IASTVisitor>> ASTVisitors;
   const util::LoggerConfig LFConfig;
   util::LoggerFactory LF;

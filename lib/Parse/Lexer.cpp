@@ -1,4 +1,5 @@
 #include "Lexer.h"
+#include "Token.h"
 
 #include <algorithm>
 #include <cassert>
@@ -36,37 +37,25 @@ const std::vector<std::pair<std::string, TokenKind>> KeywordMappings = {
     {"for", TokenKind::TK_For},       {"while", TokenKind::TK_While},
     {"return", TokenKind::TK_Return}, {"sizeof", TokenKind::TK_SizeOf}};
 
-std::pair<bool, TokenKind> isSymbol(char Char) {
-  const auto SymbolMappingIter =
-      std::find_if(SymbolMappings.begin(), SymbolMappings.end(),
-                   [Char](const std::pair<char, TokenKind> &SymbolPair) {
-                     return Char == SymbolPair.first;
+template <typename T>
+std::pair<bool, TokenKind>
+isSymbol(const T &Value, const std::vector<std::pair<T, TokenKind>> &Mappings) {
+  const auto MappingIter =
+      std::find_if(Mappings.begin(), Mappings.end(),
+                   [&Value](const std::pair<T, TokenKind> &SymbolPair) {
+                     return Value == SymbolPair.first;
                    });
 
-  if (SymbolMappingIter == SymbolMappings.end()) {
+  if (MappingIter == Mappings.end()) {
     return std::make_pair(false, TokenKind::TK_None);
   }
 
-  return std::make_pair(true, SymbolMappingIter->second);
-}
-
-std::pair<bool, TokenKind> isCompoundSymbol(const std::string &Value) {
-  const auto CSymbolMappingIter = std::find_if(
-      CompoundSymbolMappings.begin(), CompoundSymbolMappings.end(),
-      [&Value](const std::pair<std::string, TokenKind> &CSymbolPair) {
-        return Value == CSymbolPair.first;
-      });
-
-  if (CSymbolMappingIter == CompoundSymbolMappings.end()) {
-    return std::make_pair(false, TokenKind::TK_None);
-  }
-
-  return std::make_pair(true, CSymbolMappingIter->second);
+  return std::make_pair(true, MappingIter->second);
 }
 
 } // namespace
 
-Lexer::Lexer(const char *Begin, const char *End, util::LoggerFactory &LF)
+Lexer::Lexer(const char *Begin, const char *End, util::ILoggerFactory &LF)
     : CurrentChar(*Begin), Current(Begin + 1), End(End),
       Logger(LF.createLogger("Lexer")) {
   assert(Begin < End);
@@ -101,7 +90,7 @@ bool Lexer::lexToken(Token &Tok) {
     return true;
   }
 
-  const auto Result = isSymbol(CurrentChar);
+  const auto Result = isSymbol(CurrentChar, SymbolMappings);
   if (Result.first) {
     auto Kind = Result.second;
     std::string CompoundSymbol{CurrentChar};
@@ -111,7 +100,7 @@ bool Lexer::lexToken(Token &Tok) {
       }
 
       CompoundSymbol.push_back(CurrentChar);
-      const auto CResult = isCompoundSymbol(CompoundSymbol);
+      const auto CResult = isSymbol(CompoundSymbol, CompoundSymbolMappings);
       if (!CResult.first) {
         CompoundSymbol.pop_back();
         break;
@@ -143,7 +132,8 @@ bool Lexer::lexToken(Token &Tok) {
 
 void Lexer::lexIdentifier(Token &Tok) {
   std::string Identifier;
-  while (!std::isspace(CurrentChar) && !isSymbol(CurrentChar).first) {
+  while (!std::isspace(CurrentChar) &&
+         !isSymbol(CurrentChar, SymbolMappings).first) {
     if (!std::isalpha(CurrentChar) && CurrentChar != '_') {
       throw ParseException(
           "Encountered non-alphabetical character in identifier name.");
@@ -176,7 +166,8 @@ void Lexer::lexIdentifier(Token &Tok) {
 
 void Lexer::lexNumber(Token &Tok) {
   std::string NumberLiteral;
-  while (!std::isspace(CurrentChar) && !isSymbol(CurrentChar).first) {
+  while (!std::isspace(CurrentChar) &&
+         !isSymbol(CurrentChar, SymbolMappings).first) {
     if (!std::isdigit(CurrentChar)) {
       throw ParseException("Encountered non-numeric character in number.");
     }
