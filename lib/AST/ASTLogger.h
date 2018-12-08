@@ -27,6 +27,7 @@ public:
   virtual void visit(WhileLoop &AST) override;
   virtual void visit(ForLoop &AST) override;
   virtual void visit(MemberAccess &AST) override;
+  virtual void visit(FunctionCall &AST) override;
 
 private:
   std::unique_ptr<spdlog::logger> Logger;

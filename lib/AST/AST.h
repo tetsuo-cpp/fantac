@@ -228,4 +228,21 @@ struct MemberAccess : public IAST {
   const std::string MemberName;
 };
 
+struct FunctionCall : public IAST {
+  template <typename T>
+  FunctionCall(T &&Name, std::vector<ASTPtr> &&Args)
+      : Name(std::forward<T>(Name)), Args(std::move(Args)) {}
+
+  // IAST impl.
+  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+
+  template <typename T> friend T &operator<<(T &Stream, const FunctionCall &F) {
+    Stream << "{Name=" << F.Name << "}";
+    return Stream;
+  }
+
+  const std::string Name;
+  const std::vector<ASTPtr> Args;
+};
+
 } // namespace fantac::ast

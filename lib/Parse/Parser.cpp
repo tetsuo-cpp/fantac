@@ -256,16 +256,22 @@ ast::ASTPtr Parser::parseExpr() {
 ast::ASTPtr Parser::parsePrimaryExpr() {
   Logger->info("Parsing primary expression.");
 
-  // TODO: Support floats, function calls and more.
+  // TODO: Support floats and more.
   const auto Kind = CurrentToken.Kind;
+  auto Identifier = CurrentToken.Value;
   Lexer.lex(CurrentToken);
   switch (Kind) {
   case TokenKind::TK_NumberLiteral:
-    return std::make_unique<ast::NumberLiteral>(std::stoi(CurrentToken.Value));
+    return std::make_unique<ast::NumberLiteral>(std::stoi(Identifier));
   case TokenKind::TK_StringLiteral:
-    return std::make_unique<ast::StringLiteral>(CurrentToken.Value);
-  case TokenKind::TK_Identifier:
-    return std::make_unique<ast::VariableRef>(CurrentToken.Value);
+    return std::make_unique<ast::StringLiteral>(std::move(Identifier));
+  case TokenKind::TK_Identifier: {
+    if (consumeToken(TokenKind::TK_OpenParen)) {
+      return parseFunctionCall(std::move(Identifier));
+    }
+
+    return std::make_unique<ast::VariableRef>(std::move(Identifier));
+  }
   default:
     throw ParseException("Unknown primary expression.");
   }
@@ -531,6 +537,18 @@ ast::ASTPtr Parser::parsePostfix() {
   }
 
   return Left;
+}
+
+ast::ASTPtr Parser::parseFunctionCall(std::string &&FunctionName) {
+  Logger->info("Parsing function call.");
+
+  std::vector<ast::ASTPtr> Args;
+  while (!consumeToken(TokenKind::TK_CloseParen)) {
+    Args.push_back(parseExpr());
+  }
+
+  return std::make_unique<ast::FunctionCall>(std::move(FunctionName),
+                                             std::move(Args));
 }
 
 } // namespace fantac::parse

@@ -18,6 +18,7 @@ struct VariableRef;
 struct WhileLoop;
 struct ForLoop;
 struct MemberAccess;
+struct FunctionCall;
 
 // Visitor interface for walking the AST.
 class IASTVisitor {
@@ -37,6 +38,7 @@ public:
   virtual void visit(WhileLoop &AST) = 0;
   virtual void visit(ForLoop &AST) = 0;
   virtual void visit(MemberAccess &AST) = 0;
+  virtual void visit(FunctionCall &AST) = 0;
 };
 
 // Base class for all AST nodes.

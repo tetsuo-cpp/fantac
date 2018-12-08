@@ -46,6 +46,7 @@ private:
   ast::ASTPtr parseMultiplication();
   ast::ASTPtr parseUnary();
   ast::ASTPtr parsePostfix();
+  ast::ASTPtr parseFunctionCall(std::string &&FunctionName);
 
   ILexer &Lexer;
   Token CurrentToken;

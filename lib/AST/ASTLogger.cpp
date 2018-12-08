@@ -153,4 +153,14 @@ void ASTLogger::visit(MemberAccess &AST) {
   }
 }
 
+void ASTLogger::visit(FunctionCall &AST) {
+  Logger->info("FunctionCall: {}.", AST);
+
+  for (auto &Arg : AST.Args) {
+    Arg->accept(*this);
+  }
+
+  Logger->info("FunctionCall: End.");
+}
+
 } // namespace fantac::ast
