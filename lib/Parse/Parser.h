@@ -6,6 +6,12 @@
 #include <AST/ASTInterfaces.h>
 #include <Util/UtilInterfaces.h>
 
+namespace fantac::ast {
+
+enum class CTypeKind;
+
+} // namespace fantac::ast
+
 namespace fantac::parse {
 
 class Parser : public IParser {

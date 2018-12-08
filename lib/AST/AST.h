@@ -211,4 +211,21 @@ struct VariableRef : public IAST {
   const std::string Name;
 };
 
+struct MemberAccess : public IAST {
+  template <typename T>
+  MemberAccess(ASTPtr &&Expr, T &&MemberName)
+      : Expr(std::move(Expr)), MemberName(std::forward<T>(MemberName)) {}
+
+  // IAST impl.
+  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+
+  template <typename T> friend T &operator<<(T &Stream, const MemberAccess &M) {
+    Stream << "{MemberName=" << M.MemberName << "}";
+    return Stream;
+  }
+
+  const ASTPtr Expr;
+  const std::string MemberName;
+};
+
 } // namespace fantac::ast

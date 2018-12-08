@@ -4,8 +4,6 @@
 
 namespace fantac::ast {
 
-enum class CTypeKind;
-
 // Fwd declare all AST nodes.
 struct FunctionDecl;
 struct FunctionDef;
@@ -19,6 +17,7 @@ struct StringLiteral;
 struct VariableRef;
 struct WhileLoop;
 struct ForLoop;
+struct MemberAccess;
 
 // Visitor interface for walking the AST.
 class IASTVisitor {
@@ -37,6 +36,7 @@ public:
   virtual void visit(VariableRef &AST) = 0;
   virtual void visit(WhileLoop &AST) = 0;
   virtual void visit(ForLoop &AST) = 0;
+  virtual void visit(MemberAccess &AST) = 0;
 };
 
 // Base class for all AST nodes.

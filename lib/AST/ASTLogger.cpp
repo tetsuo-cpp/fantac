@@ -145,4 +145,12 @@ void ASTLogger::visit(ForLoop &AST) {
   Logger->info("ForLoop: End.");
 }
 
+void ASTLogger::visit(MemberAccess &AST) {
+  Logger->info("MemberAccess: {}.", AST);
+
+  if (AST.Expr) {
+    AST.Expr->accept(*this);
+  }
+}
+
 } // namespace fantac::ast

@@ -501,16 +501,29 @@ ast::ASTPtr Parser::parsePostfix() {
 
     // Member access.
     if (consumeToken(TokenKind::TK_Period)) {
+      Left = std::make_unique<ast::MemberAccess>(std::move(Left),
+                                                 CurrentToken.Value);
+      expectToken(TokenKind::TK_Identifier);
       continue;
     }
 
     // Member access thru pointer.
     if (consumeToken(TokenKind::TK_Arrow)) {
+      Left = std::make_unique<ast::UnaryOp>(TokenKind::TK_Multiply,
+                                            std::move(Left));
+      Left = std::make_unique<ast::MemberAccess>(std::move(Left),
+                                                 CurrentToken.Value);
+      expectToken(TokenKind::TK_Identifier);
       continue;
     }
 
     // Array access.
     if (consumeToken(TokenKind::TK_OpenSquareBracket)) {
+      Left = std::make_unique<ast::BinaryOp>(TokenKind::TK_Add, std::move(Left),
+                                             parseAssignment());
+      Left = std::make_unique<ast::UnaryOp>(TokenKind::TK_Multiply,
+                                            std::move(Left));
+      expectToken(TokenKind::TK_CloseSquareBracket);
       continue;
     }
 
