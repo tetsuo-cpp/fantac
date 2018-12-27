@@ -9,6 +9,14 @@
 
 namespace fantac::codegen {
 
+class CodeGenException : public std::runtime_error {
+public:
+  template <typename T>
+  explicit CodeGenException(T &&Error)
+      : std::runtime_error(std::forward<T>(Error)) {}
+  virtual ~CodeGenException() = default;
+};
+
 class IRGenerator : public ast::IASTVisitor {
 public:
   IRGenerator(util::ILoggerFactory &LF);
@@ -29,8 +37,27 @@ public:
   virtual void visit(ast::ForLoop &AST) override;
   virtual void visit(ast::MemberAccess &AST) override;
   virtual void visit(ast::FunctionCall &AST) override;
+  virtual void visit(ast::Return &AST) override;
 
 private:
+  template <typename T> void visitAndAssign(T &AST);
+  llvm::Value *visitImpl(ast::FunctionDecl &AST);
+  llvm::Value *visitImpl(ast::FunctionDef &AST);
+  llvm::Value *visitImpl(ast::VariableDecl &AST);
+  llvm::Value *visitImpl(ast::UnaryOp &AST);
+  llvm::Value *visitImpl(ast::BinaryOp &AST);
+  llvm::Value *visitImpl(ast::IfCond &AST);
+  llvm::Value *visitImpl(ast::TernaryCond &AST);
+  llvm::Value *visitImpl(ast::NumberLiteral &AST);
+  llvm::Value *visitImpl(ast::StringLiteral &AST);
+  llvm::Value *visitImpl(ast::VariableRef &AST);
+  llvm::Value *visitImpl(ast::WhileLoop &AST);
+  llvm::Value *visitImpl(ast::ForLoop &AST);
+  llvm::Value *visitImpl(ast::MemberAccess &AST);
+  llvm::Value *visitImpl(ast::FunctionCall &AST);
+  llvm::Value *visitImpl(ast::Return &AST);
+  llvm::Value *logicalAnd(llvm::Value *, llvm::Value *);
+  llvm::Value *greaterThan(llvm::Value *, llvm::Value *);
   llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *F,
                                            const std::string &VariableName,
                                            llvm::Type *Type);
@@ -38,6 +65,7 @@ private:
   llvm::LLVMContext Context;
   llvm::IRBuilder<> Builder;
   llvm::Module Module;
+  std::map<std::string, llvm::AllocaInst *> NamedVariables;
   std::map<std::string, llvm::Function *> Functions;
   std::unique_ptr<spdlog::logger> Logger;
 };

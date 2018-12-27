@@ -246,4 +246,13 @@ struct FunctionCall : public IAST {
   const std::vector<ASTPtr> Args;
 };
 
+struct Return : public IAST {
+  Return(ASTPtr &&Expr) : Expr(std::move(Expr)) {}
+
+  // IAST impl.
+  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+
+  const ASTPtr Expr;
+};
+
 } // namespace fantac::ast

@@ -119,6 +119,10 @@ std::string tokenKindToString(TokenKind Kind) {
     return "OpenSquareBracket";
   case TokenKind::TK_CloseSquareBracket:
     return "CloseSquareBracket";
+  case TokenKind::TK_SingleLineComment:
+    return "SingleLineComment";
+  case TokenKind::TK_Hash:
+    return "Hash";
   case TokenKind::TK_EOF:
     return "EOF";
   case TokenKind::TK_None:

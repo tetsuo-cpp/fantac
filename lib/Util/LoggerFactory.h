@@ -4,6 +4,18 @@
 
 namespace fantac::util {
 
+inline spdlog::level::level_enum StringToLoggingLevel(const std::string &X) {
+  if (X == "debug") {
+    return spdlog::level::debug;
+  } else if (X == "info") {
+    return spdlog::level::info;
+  } else if (X == "warn") {
+    return spdlog::level::warn;
+  }
+
+  return spdlog::level::info;
+}
+
 // TODO: Add configuration to toggle between file and stdout.
 struct LoggerConfig {
   spdlog::level::level_enum LogLevel;

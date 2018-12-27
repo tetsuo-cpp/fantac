@@ -18,19 +18,30 @@ const std::vector<std::pair<char, TokenKind>> SymbolMappings = {
     {'>', TokenKind::TK_GreaterThan}, {'=', TokenKind::TK_Assign},
     {'.', TokenKind::TK_Period},      {'%', TokenKind::TK_Modulus},
     {'&', TokenKind::TK_And},         {'|', TokenKind::TK_Or},
-    {'^', TokenKind::TK_Xor},         {'!', TokenKind::TK_Not}};
+    {'^', TokenKind::TK_Xor},         {'!', TokenKind::TK_Not},
+    {'#', TokenKind::TK_Hash}};
 
 const std::vector<std::pair<std::string, TokenKind>> CompoundSymbolMappings = {
-    {"+=", TokenKind::TK_AddEq},         {"-=", TokenKind::TK_SubtractEq},
-    {"*=", TokenKind::TK_MultiplyEq},    {"/=", TokenKind::TK_DivideEq},
-    {"%=", TokenKind::TK_ModulusEq},     {"==", TokenKind::TK_Equals},
-    {"<=", TokenKind::TK_LessThanEq},    {">=", TokenKind::TK_GreaterThanEq},
-    {"!=", TokenKind::TK_NotEquals},     {"<<", TokenKind::TK_ShiftLeft},
-    {"<<=", TokenKind::TK_ShiftLeftEq},  {">>", TokenKind::TK_ShiftRight},
-    {">>=", TokenKind::TK_ShiftRightEq}, {"&=", TokenKind::TK_AndEq},
-    {"|=", TokenKind::TK_OrEq},          {"^=", TokenKind::TK_XorEq},
-    {"&&", TokenKind::TK_LogicalAnd},    {"||", TokenKind::TK_LogicalOr},
-    {"->", TokenKind::TK_Arrow}};
+    {"+=", TokenKind::TK_AddEq},
+    {"-=", TokenKind::TK_SubtractEq},
+    {"*=", TokenKind::TK_MultiplyEq},
+    {"/=", TokenKind::TK_DivideEq},
+    {"%=", TokenKind::TK_ModulusEq},
+    {"==", TokenKind::TK_Equals},
+    {"<=", TokenKind::TK_LessThanEq},
+    {">=", TokenKind::TK_GreaterThanEq},
+    {"!=", TokenKind::TK_NotEquals},
+    {"<<", TokenKind::TK_ShiftLeft},
+    {"<<=", TokenKind::TK_ShiftLeftEq},
+    {">>", TokenKind::TK_ShiftRight},
+    {">>=", TokenKind::TK_ShiftRightEq},
+    {"&=", TokenKind::TK_AndEq},
+    {"|=", TokenKind::TK_OrEq},
+    {"^=", TokenKind::TK_XorEq},
+    {"&&", TokenKind::TK_LogicalAnd},
+    {"||", TokenKind::TK_LogicalOr},
+    {"->", TokenKind::TK_Arrow},
+    {"//", TokenKind::TK_SingleLineComment}};
 
 const std::vector<std::pair<std::string, TokenKind>> KeywordMappings = {
     {"if", TokenKind::TK_If},         {"else", TokenKind::TK_Else},
@@ -107,6 +118,15 @@ bool Lexer::lexToken(Token &Tok) {
       } else {
         Kind = CResult.second;
       }
+    }
+
+    // TODO: Implement preprocessor. Until then just ignore.
+    if (Kind == TokenKind::TK_SingleLineComment || Kind == TokenKind::TK_Hash) {
+      while (readNextChar() && CurrentChar != '\n') {
+      }
+
+      Logger->info("Ignoring preprocessor directive.");
+      return lexToken(Tok);
     }
 
     Logger->debug("Lexed symbol with kind {} and value {}.", Kind,

@@ -12,7 +12,41 @@ IRGenerator::IRGenerator(util::ILoggerFactory &LF)
 
 IRGenerator::~IRGenerator() { Module.print(llvm::errs(), nullptr); }
 
-void IRGenerator::visit(ast::FunctionDecl &AST) {
+void IRGenerator::visit(ast::FunctionDecl &AST) { visitAndAssign(AST); }
+
+void IRGenerator::visit(ast::FunctionDef &AST) { visitAndAssign(AST); }
+
+void IRGenerator::visit(ast::VariableDecl &AST) { visitAndAssign(AST); }
+
+void IRGenerator::visit(ast::UnaryOp &AST) { visitAndAssign(AST); }
+
+void IRGenerator::visit(ast::BinaryOp &AST) { visitAndAssign(AST); }
+
+void IRGenerator::visit(ast::IfCond &AST) { visitAndAssign(AST); }
+
+void IRGenerator::visit(ast::TernaryCond &AST) { visitAndAssign(AST); }
+
+void IRGenerator::visit(ast::NumberLiteral &AST) { visitAndAssign(AST); }
+
+void IRGenerator::visit(ast::StringLiteral &AST) { visitAndAssign(AST); }
+
+void IRGenerator::visit(ast::VariableRef &AST) { visitAndAssign(AST); }
+
+void IRGenerator::visit(ast::WhileLoop &AST) { visitAndAssign(AST); }
+
+void IRGenerator::visit(ast::ForLoop &AST) { visitAndAssign(AST); }
+
+void IRGenerator::visit(ast::MemberAccess &AST) { visitAndAssign(AST); }
+
+void IRGenerator::visit(ast::FunctionCall &AST) { visitAndAssign(AST); }
+
+void IRGenerator::visit(ast::Return &AST) { visitAndAssign(AST); }
+
+template <typename T> void IRGenerator::visitAndAssign(T &AST) {
+  AST.LLVMValue = visitImpl(AST);
+}
+
+llvm::Value *IRGenerator::visitImpl(ast::FunctionDecl &AST) {
   Logger->info("Generating IR for FunctionDecl.");
 
   std::vector<llvm::Type *> Args(AST.Args.size(),
@@ -30,12 +64,12 @@ void IRGenerator::visit(ast::FunctionDecl &AST) {
   }
 
   Functions.emplace(AST.Name, F);
+  return nullptr;
 }
 
-void IRGenerator::visit(ast::FunctionDef &AST) {
+llvm::Value *IRGenerator::visitImpl(ast::FunctionDef &AST) {
   Logger->info("Generating IR for FunctionDef.");
 
-  llvm::Function *F = nullptr;
   const auto &Name = AST.Decl->Name;
 
   auto Iter = Functions.find(Name);
@@ -44,23 +78,30 @@ void IRGenerator::visit(ast::FunctionDef &AST) {
     Iter = Functions.find(Name);
   }
 
-  F = Iter->second;
-
+  llvm::Function *F = Iter->second;
   llvm::BasicBlock *BB = llvm::BasicBlock::Create(Context, "entry", F);
   Builder.SetInsertPoint(BB);
 
+  NamedVariables.clear();
+  for (auto &Arg : F->args()) {
+    llvm::AllocaInst *Alloca = createEntryBlockAlloca(
+        F, Arg.getName(), llvm::Type::getInt32Ty(Context));
+
+    Builder.CreateStore(&Arg, Alloca);
+    NamedVariables.emplace(Arg.getName(), Alloca);
+  }
+
   for (const auto &Instruction : AST.Body) {
-    if (Instruction) {
-      Instruction->accept(*this);
-    }
+    Instruction->accept(*this);
   }
 
   Builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), 0));
 
   llvm::verifyFunction(*F);
+  return nullptr;
 }
 
-void IRGenerator::visit(ast::VariableDecl &AST) {
+llvm::Value *IRGenerator::visitImpl(ast::VariableDecl &AST) {
   Logger->info("Generating IR for VariableDecl.");
 
   auto *F = Builder.GetInsertBlock()->getParent();
@@ -70,6 +111,134 @@ void IRGenerator::visit(ast::VariableDecl &AST) {
 
   auto *Alloca = createEntryBlockAlloca(F, AST.Name, VariableType);
   Builder.CreateStore(InitialValue, Alloca);
+  NamedVariables.emplace(AST.Name, Alloca);
+  return nullptr;
+}
+
+llvm::Value *IRGenerator::visitImpl(ast::UnaryOp &AST) {
+  static_cast<void>(AST);
+  return nullptr;
+}
+
+llvm::Value *IRGenerator::visitImpl(ast::BinaryOp &AST) {
+  // Evaluate from left to right.
+  AST.Left->accept(*this);
+  AST.Right->accept(*this);
+
+  switch (AST.Operator) {
+  case parse::TokenKind::TK_LogicalAnd:
+    return logicalAnd(AST.Left->LLVMValue, AST.Right->LLVMValue);
+  case parse::TokenKind::TK_GreaterThan:
+    return greaterThan(AST.Left->LLVMValue, AST.Right->LLVMValue);
+  case parse::TokenKind::TK_Assign:
+    return nullptr;
+  default:
+    throw CodeGenException(
+        fmt::format("Invalid binary operator {}.", AST.Operator));
+  }
+}
+
+llvm::Value *IRGenerator::visitImpl(ast::IfCond &AST) {
+  AST.Condition->accept(*this);
+  auto *CondV = AST.Condition->LLVMValue;
+  if (!CondV) {
+    throw CodeGenException("Condition in if statement evaluates to void.");
+  }
+
+  llvm::Function *CurrentF = Builder.GetInsertBlock()->getParent();
+  llvm::BasicBlock *ThenBB =
+      llvm::BasicBlock::Create(Context, "then", CurrentF);
+  llvm::BasicBlock *ElseBB = llvm::BasicBlock::Create(Context, "else");
+  llvm::BasicBlock *MergeBB = llvm::BasicBlock::Create(Context, "ifcont");
+
+  Builder.CreateCondBr(CondV, ThenBB, ElseBB);
+  Builder.SetInsertPoint(ThenBB);
+
+  for (const auto &Instruction : AST.Then) {
+    Instruction->accept(*this);
+  }
+
+  Builder.CreateBr(MergeBB);
+  ThenBB = Builder.GetInsertBlock();
+  CurrentF->getBasicBlockList().push_back(ElseBB);
+  Builder.SetInsertPoint(ElseBB);
+
+  for (const auto &Instruction : AST.Else) {
+    Instruction->accept(*this);
+  }
+
+  Builder.CreateBr(MergeBB);
+  ElseBB = Builder.GetInsertBlock();
+  CurrentF->getBasicBlockList().push_back(MergeBB);
+  Builder.SetInsertPoint(MergeBB);
+  return nullptr;
+}
+
+llvm::Value *IRGenerator::visitImpl(ast::TernaryCond &AST) {
+  static_cast<void>(AST);
+  return nullptr;
+}
+
+llvm::Value *IRGenerator::visitImpl(ast::NumberLiteral &AST) {
+  return llvm::ConstantInt::get(Context, llvm::APInt(32, AST.Value));
+}
+
+llvm::Value *IRGenerator::visitImpl(ast::StringLiteral &AST) {
+  static_cast<void>(AST);
+  return nullptr;
+}
+
+llvm::Value *IRGenerator::visitImpl(ast::VariableRef &AST) {
+  const auto VarIter = NamedVariables.find(AST.Name);
+  if (VarIter == NamedVariables.end()) {
+    throw CodeGenException(
+        fmt::format("Reference to non-existent variable name: {}.", AST.Name));
+  }
+
+  return Builder.CreateLoad(VarIter->second, AST.Name);
+}
+
+llvm::Value *IRGenerator::visitImpl(ast::WhileLoop &AST) {
+  static_cast<void>(AST);
+  return nullptr;
+}
+
+llvm::Value *IRGenerator::visitImpl(ast::ForLoop &AST) {
+  static_cast<void>(AST);
+  return nullptr;
+}
+
+llvm::Value *IRGenerator::visitImpl(ast::MemberAccess &AST) {
+  static_cast<void>(AST);
+  return nullptr;
+}
+
+llvm::Value *IRGenerator::visitImpl(ast::FunctionCall &AST) {
+  const auto FunctionIter = Functions.find(AST.Name);
+  if (FunctionIter == Functions.end()) {
+    throw CodeGenException(fmt::format(
+        "Found function call to unknown function name: {}.", AST.Name));
+  }
+
+  llvm::Function *F = FunctionIter->second;
+  if (F->arg_size() != AST.Args.size()) {
+    throw CodeGenException(fmt::format(
+        "Incorrect number of arguments passed. Expected {} but got {}.",
+        F->arg_size(), AST.Args.size()));
+  }
+
+  std::vector<llvm::Value *> ArgsV;
+  for (auto &Arg : AST.Args) {
+    Arg->accept(*this);
+    ArgsV.push_back(Arg->LLVMValue);
+  }
+
+  return Builder.CreateCall(F, ArgsV, "calltmp");
+}
+
+llvm::Value *IRGenerator::visitImpl(ast::Return &AST) {
+  static_cast<void>(AST);
+  return nullptr;
 }
 
 llvm::AllocaInst *IRGenerator::createEntryBlockAlloca(
@@ -79,26 +248,14 @@ llvm::AllocaInst *IRGenerator::createEntryBlockAlloca(
   return B.CreateAlloca(Type, nullptr, VariableName);
 }
 
-void IRGenerator::visit(ast::UnaryOp &AST) { static_cast<void>(AST); }
+llvm::Value *IRGenerator::logicalAnd(llvm::Value *LeftV, llvm::Value *RightV) {
+  static_cast<void>(LeftV);
+  static_cast<void>(RightV);
+  return nullptr;
+}
 
-void IRGenerator::visit(ast::BinaryOp &AST) { static_cast<void>(AST); }
-
-void IRGenerator::visit(ast::IfCond &AST) { static_cast<void>(AST); }
-
-void IRGenerator::visit(ast::TernaryCond &AST) { static_cast<void>(AST); }
-
-void IRGenerator::visit(ast::NumberLiteral &AST) { static_cast<void>(AST); }
-
-void IRGenerator::visit(ast::StringLiteral &AST) { static_cast<void>(AST); }
-
-void IRGenerator::visit(ast::VariableRef &AST) { static_cast<void>(AST); }
-
-void IRGenerator::visit(ast::WhileLoop &AST) { static_cast<void>(AST); }
-
-void IRGenerator::visit(ast::ForLoop &AST) { static_cast<void>(AST); }
-
-void IRGenerator::visit(ast::MemberAccess &AST) { static_cast<void>(AST); }
-
-void IRGenerator::visit(ast::FunctionCall &AST) { static_cast<void>(AST); }
+llvm::Value *IRGenerator::greaterThan(llvm::Value *LeftV, llvm::Value *RightV) {
+  return Builder.CreateICmpSGT(LeftV, RightV);
+}
 
 } // namespace fantac::codegen

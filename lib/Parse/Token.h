@@ -68,6 +68,10 @@ enum class TokenKind {
   TK_Decrement,
   TK_OpenSquareBracket,
   TK_CloseSquareBracket,
+  // Comments.
+  TK_SingleLineComment,
+  // Preprocessor.
+  TK_Hash,
   // End of file.
   TK_EOF,
   TK_None

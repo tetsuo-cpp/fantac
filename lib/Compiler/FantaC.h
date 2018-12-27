@@ -2,7 +2,7 @@
 
 #include <AST/ASTInterfaces.h>
 #include <Parse/ParseInterfaces.h>
-#include <Util/LoggerFactory.h>
+#include <Util/UtilInterfaces.h>
 
 #include <memory>
 #include <string>
@@ -14,14 +14,13 @@ public:
   FantaC();
   virtual ~FantaC() = default;
 
-  void run(const std::string &FileName);
+  void run(const std::string &FileName, const std::string &LoggingLevel);
 
 private:
   std::unique_ptr<parse::ILexer> Lexer;
   std::unique_ptr<parse::IParser> Parser;
   std::vector<std::unique_ptr<ast::IASTVisitor>> ASTVisitors;
-  const util::LoggerConfig LFConfig;
-  util::LoggerFactory LF;
+  std::unique_ptr<util::ILoggerFactory> LF;
 };
 
 } // namespace fantac

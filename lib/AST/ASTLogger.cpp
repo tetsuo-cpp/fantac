@@ -169,4 +169,12 @@ void ASTLogger::visit(FunctionCall &AST) {
   Logger->info("FunctionCall: End.");
 }
 
+void ASTLogger::visit(Return &AST) {
+  Logger->info("Return: {}.");
+
+  if (AST.Expr) {
+    AST.Expr->accept(*this);
+  }
+}
+
 } // namespace fantac::ast
