@@ -56,8 +56,6 @@ private:
   llvm::Value *visitImpl(ast::MemberAccess &AST);
   llvm::Value *visitImpl(ast::FunctionCall &AST);
   llvm::Value *visitImpl(ast::Return &AST);
-  llvm::Value *logicalAnd(llvm::Value *, llvm::Value *);
-  llvm::Value *greaterThan(llvm::Value *, llvm::Value *);
   llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *F,
                                            const std::string &VariableName,
                                            llvm::Type *Type);

@@ -6,6 +6,8 @@ int foo(int x, int y);
 
 int bar(int x) {
   int y = foo(x, x);
+  printi(x);
+  printi(y);
   if (x > y) {
     printi(x);
   } else {
@@ -17,5 +19,5 @@ int bar(int x) {
 
 int foo(int x, int y) {
   int z;
-  return x * y;
+  return 100;
 }

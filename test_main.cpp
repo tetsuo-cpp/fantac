@@ -19,5 +19,5 @@ int main() {
   std::cout << "Running Bar." << std::endl;
   bar(2);
   bar(-1);
-  std::cout << "Existing Bar." << std::endl;
+  std::cout << "Exiting Bar." << std::endl;
 }

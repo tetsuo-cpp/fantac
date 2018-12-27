@@ -55,7 +55,7 @@ struct IAST {
 
   virtual void accept(IASTVisitor &Visitor) = 0;
 
-  llvm::Value *LLVMValue;
+  llvm::Value *LLVMValue = nullptr;
 };
 
 using ASTPtr = std::unique_ptr<IAST>;

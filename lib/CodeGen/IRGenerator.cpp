@@ -95,8 +95,6 @@ llvm::Value *IRGenerator::visitImpl(ast::FunctionDef &AST) {
     Instruction->accept(*this);
   }
 
-  Builder.CreateRet(llvm::ConstantInt::get(llvm::Type::getInt32Ty(Context), 0));
-
   llvm::verifyFunction(*F);
   return nullptr;
 }
@@ -108,6 +106,11 @@ llvm::Value *IRGenerator::visitImpl(ast::VariableDecl &AST) {
 
   llvm::Type *VariableType = llvm::Type::getInt32Ty(Context);
   llvm::Value *InitialValue = llvm::ConstantInt::get(VariableType, 0);
+
+  if (AST.AssignmentExpr) {
+    AST.AssignmentExpr->accept(*this);
+    InitialValue = AST.AssignmentExpr->LLVMValue;
+  }
 
   auto *Alloca = createEntryBlockAlloca(F, AST.Name, VariableType);
   Builder.CreateStore(InitialValue, Alloca);
@@ -127,11 +130,13 @@ llvm::Value *IRGenerator::visitImpl(ast::BinaryOp &AST) {
 
   switch (AST.Operator) {
   case parse::TokenKind::TK_LogicalAnd:
-    return logicalAnd(AST.Left->LLVMValue, AST.Right->LLVMValue);
-  case parse::TokenKind::TK_GreaterThan:
-    return greaterThan(AST.Left->LLVMValue, AST.Right->LLVMValue);
-  case parse::TokenKind::TK_Assign:
     return nullptr;
+  case parse::TokenKind::TK_GreaterThan:
+    return Builder.CreateICmpSGT(AST.Left->LLVMValue, AST.Right->LLVMValue);
+  case parse::TokenKind::TK_Equals:
+    return Builder.CreateICmpEQ(AST.Left->LLVMValue, AST.Right->LLVMValue);
+  case parse::TokenKind::TK_Assign:
+    return Builder.CreateStore(AST.Right->LLVMValue, AST.Left->LLVMValue);
   default:
     throw CodeGenException(
         fmt::format("Invalid binary operator {}.", AST.Operator));
@@ -237,7 +242,8 @@ llvm::Value *IRGenerator::visitImpl(ast::FunctionCall &AST) {
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::Return &AST) {
-  static_cast<void>(AST);
+  AST.Expr->accept(*this);
+  Builder.CreateRet(AST.Expr->LLVMValue);
   return nullptr;
 }
 
@@ -246,16 +252,6 @@ llvm::AllocaInst *IRGenerator::createEntryBlockAlloca(
   llvm::IRBuilder<> B(&F->getEntryBlock(), F->getEntryBlock().begin());
 
   return B.CreateAlloca(Type, nullptr, VariableName);
-}
-
-llvm::Value *IRGenerator::logicalAnd(llvm::Value *LeftV, llvm::Value *RightV) {
-  static_cast<void>(LeftV);
-  static_cast<void>(RightV);
-  return nullptr;
-}
-
-llvm::Value *IRGenerator::greaterThan(llvm::Value *LeftV, llvm::Value *RightV) {
-  return Builder.CreateICmpSGT(LeftV, RightV);
 }
 
 } // namespace fantac::codegen
