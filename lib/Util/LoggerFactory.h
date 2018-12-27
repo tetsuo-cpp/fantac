@@ -4,7 +4,7 @@
 
 namespace fantac::util {
 
-inline spdlog::level::level_enum StringToLoggingLevel(const std::string &X) {
+inline spdlog::level::level_enum stringToLoggingLevel(const std::string &X) {
   if (X == "debug") {
     return spdlog::level::debug;
   } else if (X == "info") {

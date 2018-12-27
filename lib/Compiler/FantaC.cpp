@@ -13,7 +13,7 @@ namespace fantac {
 FantaC::FantaC() = default;
 
 void FantaC::run(const std::string &FileName, const std::string &LoggingLevel) {
-  const util::LoggerConfig Config{util::StringToLoggingLevel(LoggingLevel)};
+  const util::LoggerConfig Config{util::stringToLoggingLevel(LoggingLevel)};
   LF = std::make_unique<util::LoggerFactory>(Config);
 
   // Construct logger.
