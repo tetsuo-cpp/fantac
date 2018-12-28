@@ -243,8 +243,13 @@ llvm::Value *IRGenerator::visitImpl(ast::FunctionCall &AST) {
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::Return &AST) {
-  AST.Expr->accept(*this);
-  Builder.CreateRet(AST.Expr->LLVMValue);
+  if (AST.Expr) {
+    AST.Expr->accept(*this);
+    Builder.CreateRet(AST.Expr->LLVMValue);
+  } else {
+    Builder.CreateRetVoid();
+  }
+
   return nullptr;
 }
 
