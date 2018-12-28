@@ -10,16 +10,34 @@ namespace fantac::ast {
 
 enum class CTypeKind {
   CTK_Int,
-  CTK_Long,
   CTK_Float,
   CTK_Double,
   CTK_Char,
+  CTK_Void,
   CTK_None
+};
+
+enum class CLengthKind {
+  CLK_Default,
+  CLK_Short,
+  CLK_Long,
+  CLK_LongLong,
+  CLK_None
+};
+
+struct CType {
+  CType(CTypeKind Type, CLengthKind Length, bool Signed, bool Pointer)
+      : Type(Type), Length(Length), Signed(Signed), Pointer(Pointer) {}
+
+  CTypeKind Type;
+  CLengthKind Length;
+  bool Signed;
+  bool Pointer;
 };
 
 struct FunctionDecl : public IAST {
   template <typename T0, typename T1>
-  FunctionDecl(T0 &&Name, CTypeKind Return, T1 &&Args)
+  FunctionDecl(T0 &&Name, CType Return, T1 &&Args)
       : Name(std::forward<T0>(Name)), Return(Return),
         Args(std::forward<T1>(Args)) {}
 
@@ -40,8 +58,8 @@ struct FunctionDecl : public IAST {
   }
 
   const std::string Name;
-  const CTypeKind Return;
-  const std::vector<std::pair<std::string, CTypeKind>> Args;
+  const CType Return;
+  const std::vector<std::pair<std::string, CType>> Args;
 };
 
 struct FunctionDef : public IAST {
@@ -49,8 +67,7 @@ struct FunctionDef : public IAST {
       : Decl(std::move(Decl)), Body(std::move(Body)) {}
 
   template <typename T0, typename T1>
-  FunctionDef(T0 &&Name, CTypeKind Return, T1 &&Args,
-              std::vector<ASTPtr> &&Body)
+  FunctionDef(T0 &&Name, CType Return, T1 &&Args, std::vector<ASTPtr> &&Body)
       : Decl(new FunctionDecl(std::forward<T0>(Name), Return,
                               std::forward<T1>(Args))),
         Body(std::move(Body)) {}
@@ -69,7 +86,7 @@ struct FunctionDef : public IAST {
 
 struct VariableDecl : public IAST {
   template <typename T>
-  VariableDecl(CTypeKind Type, T &&Name, ASTPtr &&AssignmentExpr = nullptr)
+  VariableDecl(CType Type, T &&Name, ASTPtr &&AssignmentExpr = nullptr)
       : Type(Type), Name(std::forward<T>(Name)),
         AssignmentExpr(std::move(AssignmentExpr)) {}
 
@@ -81,7 +98,7 @@ struct VariableDecl : public IAST {
     return Stream;
   }
 
-  const CTypeKind Type;
+  const CType Type;
   const std::string Name;
   const ASTPtr AssignmentExpr;
 };

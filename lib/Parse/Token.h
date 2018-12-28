@@ -72,6 +72,15 @@ enum class TokenKind {
   TK_SingleLineComment,
   // Preprocessor.
   TK_Hash,
+  // Types.
+  TK_Char,
+  TK_Int,
+  TK_Float,
+  TK_Double,
+  TK_Unsigned,
+  TK_Long,
+  TK_Enum,
+  TK_Struct,
   // End of file.
   TK_EOF,
   TK_None

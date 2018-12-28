@@ -123,6 +123,22 @@ std::string tokenKindToString(TokenKind Kind) {
     return "SingleLineComment";
   case TokenKind::TK_Hash:
     return "Hash";
+  case TokenKind::TK_Char:
+    return "Char";
+  case TokenKind::TK_Int:
+    return "Int";
+  case TokenKind::TK_Float:
+    return "Float";
+  case TokenKind::TK_Double:
+    return "Double";
+  case TokenKind::TK_Unsigned:
+    return "Unsigned";
+  case TokenKind::TK_Long:
+    return "Long";
+  case TokenKind::TK_Enum:
+    return "Enum";
+  case TokenKind::TK_Struct:
+    return "Struct";
   case TokenKind::TK_EOF:
     return "EOF";
   case TokenKind::TK_None:

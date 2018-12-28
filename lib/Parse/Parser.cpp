@@ -7,31 +7,6 @@
 
 namespace fantac::parse {
 
-namespace {
-
-const std::vector<std::pair<std::string, ast::CTypeKind>> CTypeMappings = {
-    {"int", ast::CTypeKind::CTK_Int},
-    {"long", ast::CTypeKind::CTK_Long},
-    {"float", ast::CTypeKind::CTK_Float},
-    {"double", ast::CTypeKind::CTK_Double},
-    {"char", ast::CTypeKind::CTK_Char}};
-
-ast::CTypeKind stringToCTypeKind(const std::string &Type) {
-  const auto CTypeMappingIter = std::find_if(
-      CTypeMappings.begin(), CTypeMappings.end(),
-      [&Type](const std::pair<std::string, ast::CTypeKind> &CTypePair) {
-        return Type == CTypePair.first;
-      });
-
-  if (CTypeMappingIter == CTypeMappings.end()) {
-    return ast::CTypeKind::CTK_None;
-  }
-
-  return CTypeMappingIter->second;
-}
-
-} // namespace
-
 Parser::Parser(ILexer &Lexer, util::ILoggerFactory &LF)
     : Lexer(Lexer), Logger(LF.createLogger("Parser")) {
   Lexer.lex(CurrentToken);
@@ -44,13 +19,7 @@ ast::ASTPtr Parser::parseTopLevelExpr() {
     return nullptr;
   }
 
-  const auto Type = stringToCTypeKind(CurrentToken.Value);
-  if (Type == ast::CTypeKind::CTK_None) {
-    throw ParseException(
-        fmt::format("Unknown type name: {}.", CurrentToken.Value));
-  }
-
-  expectToken(TokenKind::TK_Identifier);
+  const auto Type = parseType();
   auto Name = CurrentToken.Value;
 
   // Function call.
@@ -80,11 +49,11 @@ void Parser::expectToken(TokenKind Kind) {
   }
 }
 
-ast::ASTPtr Parser::parseFunction(ast::CTypeKind Return, std::string &&Name) {
+ast::ASTPtr Parser::parseFunction(ast::CType Return, std::string &&Name) {
   Logger->debug("Parsing function.");
 
   // Parse arguments.
-  std::vector<std::pair<std::string, ast::CTypeKind>> Args;
+  std::vector<std::pair<std::string, ast::CType>> Args;
   while (!consumeToken(TokenKind::TK_CloseParen)) {
     // Skip commas between arguments.
     if (!Args.empty()) {
@@ -92,8 +61,7 @@ ast::ASTPtr Parser::parseFunction(ast::CTypeKind Return, std::string &&Name) {
     }
 
     // Argument type.
-    const auto ArgType = stringToCTypeKind(CurrentToken.Value);
-    expectToken(TokenKind::TK_Identifier);
+    const auto ArgType = parseType();
 
     // Argument name.
     Args.emplace_back(CurrentToken.Value, ArgType);
@@ -142,8 +110,16 @@ ast::ASTPtr Parser::parseStatement() {
   }
 
   // Variable declaration.
-  const auto Type = stringToCTypeKind(CurrentToken.Value);
-  if (Type != ast::CTypeKind::CTK_None) {
+  const auto IsBeginningOfTypeDecl =
+      CurrentToken.Kind == TokenKind::TK_Unsigned ||
+      CurrentToken.Kind == TokenKind::TK_Long ||
+      CurrentToken.Kind == TokenKind::TK_Char ||
+      CurrentToken.Kind == TokenKind::TK_Int ||
+      CurrentToken.Kind == TokenKind::TK_Float ||
+      CurrentToken.Kind == TokenKind::TK_Double;
+
+  if (IsBeginningOfTypeDecl) {
+    const auto Type = parseType();
     return parseVariableDecl(Type);
   }
 
@@ -153,10 +129,9 @@ ast::ASTPtr Parser::parseStatement() {
   return Expr;
 }
 
-ast::ASTPtr Parser::parseVariableDecl(ast::CTypeKind Type) {
+ast::ASTPtr Parser::parseVariableDecl(ast::CType Type) {
   Logger->debug("Parsing variable declaration.");
 
-  expectToken(TokenKind::TK_Identifier);
   auto Name = CurrentToken.Value;
   expectToken(TokenKind::TK_Identifier);
 
@@ -593,6 +568,36 @@ ast::ASTPtr Parser::parseFunctionCall(std::string &&FunctionName) {
   Logger->info("Found function call.");
   return std::make_unique<ast::FunctionCall>(std::move(FunctionName),
                                              std::move(Args));
+}
+
+ast::CType Parser::parseType() {
+  const bool Unsigned = consumeToken(TokenKind::TK_Unsigned);
+  ast::CLengthKind Length = ast::CLengthKind::CLK_Default;
+  if (consumeToken(TokenKind::TK_Long)) {
+    Length = ast::CLengthKind::CLK_Long;
+  }
+
+  if (consumeToken(TokenKind::TK_Long)) {
+    Length = ast::CLengthKind::CLK_LongLong;
+  }
+
+  ast::CTypeKind Type;
+  if (consumeToken(TokenKind::TK_Int)) {
+    Type = ast::CTypeKind::CTK_Int;
+  } else if (consumeToken(TokenKind::TK_Char)) {
+    Type = ast::CTypeKind::CTK_Char;
+  } else if (consumeToken(TokenKind::TK_Float)) {
+    Type = ast::CTypeKind::CTK_Float;
+  } else if (consumeToken(TokenKind::TK_Double)) {
+    Type = ast::CTypeKind::CTK_Double;
+  } else {
+    throw ParseException(fmt::format(
+        "Unknown type name: {}. Expected one of (char, int, float, double).",
+        CurrentToken.Value));
+  }
+
+  const bool Pointer = consumeToken(TokenKind::TK_Multiply);
+  return ast::CType(Type, Length, Unsigned, Pointer);
 }
 
 } // namespace fantac::parse

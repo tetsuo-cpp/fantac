@@ -8,6 +8,7 @@
 
 namespace fantac::ast {
 
+struct CType;
 enum class CTypeKind;
 
 } // namespace fantac::ast
@@ -24,9 +25,9 @@ public:
 private:
   bool consumeToken(TokenKind Kind);
   void expectToken(TokenKind Kind);
-  ast::ASTPtr parseFunction(ast::CTypeKind Return, std::string &&Name);
+  ast::ASTPtr parseFunction(ast::CType Return, std::string &&Name);
   ast::ASTPtr parseStatement();
-  ast::ASTPtr parseVariableDecl(ast::CTypeKind Type);
+  ast::ASTPtr parseVariableDecl(ast::CType Type);
   ast::ASTPtr parseIfCond();
   ast::ASTPtr parseWhileLoop();
   ast::ASTPtr parseForLoop();
@@ -47,6 +48,7 @@ private:
   ast::ASTPtr parseUnary();
   ast::ASTPtr parsePostfix();
   ast::ASTPtr parseFunctionCall(std::string &&FunctionName);
+  ast::CType parseType();
 
   ILexer &Lexer;
   Token CurrentToken;
