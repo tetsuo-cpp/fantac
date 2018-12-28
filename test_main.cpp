@@ -2,12 +2,12 @@
 #include <stdio.h>
 
 extern "C" int putchari(int X) {
-  fputc((char)X, stderr);
+  fputc((char)X, stdout);
   return 0;
 }
 
 extern "C" int printi(int X) {
-  fprintf(stderr, "%d\n", X);
+  fprintf(stdout, "%d\n", X);
   return 0;
 }
 

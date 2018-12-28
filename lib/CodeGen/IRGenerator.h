@@ -7,6 +7,12 @@
 #include <llvm/IR/LLVMContext.h>
 #include <llvm/IR/Module.h>
 
+namespace fantac::ast {
+
+struct CType;
+
+} // namespace fantac::ast
+
 namespace fantac::codegen {
 
 class CodeGenException : public std::runtime_error {
@@ -59,6 +65,7 @@ private:
   llvm::AllocaInst *createEntryBlockAlloca(llvm::Function *F,
                                            const std::string &VariableName,
                                            llvm::Type *Type);
+  llvm::Type *cTypeToLLVMType(ast::CType);
 
   llvm::LLVMContext Context;
   llvm::IRBuilder<> Builder;

@@ -49,11 +49,13 @@ template <typename T> void IRGenerator::visitAndAssign(T &AST) {
 llvm::Value *IRGenerator::visitImpl(ast::FunctionDecl &AST) {
   Logger->info("Generating IR for FunctionDecl.");
 
-  std::vector<llvm::Type *> Args(AST.Args.size(),
-                                 llvm::Type::getInt32Ty(Context));
+  std::vector<llvm::Type *> ArgTypes;
+  for (const auto &Arg : AST.Args) {
+    ArgTypes.push_back(cTypeToLLVMType(Arg.second));
+  }
 
-  llvm::FunctionType *FT =
-      llvm::FunctionType::get(llvm::Type::getInt32Ty(Context), Args, false);
+  llvm::Type *ReturnType = cTypeToLLVMType(AST.Return);
+  llvm::FunctionType *FT = llvm::FunctionType::get(ReturnType, ArgTypes, false);
 
   llvm::Function *F = llvm::Function::Create(
       FT, llvm::Function::ExternalLinkage, AST.Name, &Module);
@@ -84,8 +86,8 @@ llvm::Value *IRGenerator::visitImpl(ast::FunctionDef &AST) {
 
   NamedVariables.clear();
   for (auto &Arg : F->args()) {
-    llvm::AllocaInst *Alloca = createEntryBlockAlloca(
-        F, Arg.getName(), llvm::Type::getInt32Ty(Context));
+    llvm::AllocaInst *Alloca =
+        createEntryBlockAlloca(F, Arg.getName(), Arg.getType());
 
     Builder.CreateStore(&Arg, Alloca);
     NamedVariables.emplace(Arg.getName(), Alloca);
@@ -104,7 +106,7 @@ llvm::Value *IRGenerator::visitImpl(ast::VariableDecl &AST) {
 
   auto *F = Builder.GetInsertBlock()->getParent();
 
-  llvm::Type *VariableType = llvm::Type::getInt32Ty(Context);
+  llvm::Type *VariableType = cTypeToLLVMType(AST.Type);
   llvm::Value *InitialValue = llvm::ConstantInt::get(VariableType, 0);
 
   if (AST.AssignmentExpr) {
@@ -189,8 +191,7 @@ llvm::Value *IRGenerator::visitImpl(ast::NumberLiteral &AST) {
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::StringLiteral &AST) {
-  static_cast<void>(AST);
-  return nullptr;
+  return Builder.CreateGlobalStringPtr(AST.Value);
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::VariableRef &AST) {
@@ -238,7 +239,7 @@ llvm::Value *IRGenerator::visitImpl(ast::FunctionCall &AST) {
     ArgsV.push_back(Arg->LLVMValue);
   }
 
-  return Builder.CreateCall(F, ArgsV, "calltmp");
+  return Builder.CreateCall(F, ArgsV);
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::Return &AST) {
@@ -252,6 +253,38 @@ llvm::AllocaInst *IRGenerator::createEntryBlockAlloca(
   llvm::IRBuilder<> B(&F->getEntryBlock(), F->getEntryBlock().begin());
 
   return B.CreateAlloca(Type, nullptr, VariableName);
+}
+
+llvm::Type *IRGenerator::cTypeToLLVMType(ast::CType X) {
+  // TODO: Implement short.
+  llvm::Type *Type = [this, X]() -> llvm::Type * {
+    switch (X.Type) {
+    case ast::CTypeKind::CTK_Void:
+      return Builder.getVoidTy();
+    case ast::CTypeKind::CTK_Char:
+      return Builder.getInt8Ty();
+    case ast::CTypeKind::CTK_Double:
+      return Builder.getDoubleTy();
+    case ast::CTypeKind::CTK_Float:
+      return Builder.getFloatTy();
+    case ast::CTypeKind::CTK_Int:
+      switch (X.Length) {
+      case ast::CLengthKind::CLK_Default:
+      case ast::CLengthKind::CLK_Long:
+        return Builder.getInt32Ty();
+      case ast::CLengthKind::CLK_LongLong:
+        return Builder.getInt64Ty();
+      default:
+        break;
+      }
+    default:
+      break;
+    }
+
+    throw CodeGenException("Bad CType to LLVM Type mapping.");
+  }();
+
+  return X.Pointer ? Type->getPointerTo() : Type;
 }
 
 } // namespace fantac::codegen

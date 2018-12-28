@@ -123,6 +123,8 @@ std::string tokenKindToString(TokenKind Kind) {
     return "SingleLineComment";
   case TokenKind::TK_Hash:
     return "Hash";
+  case TokenKind::TK_Void:
+    return "Void";
   case TokenKind::TK_Char:
     return "Char";
   case TokenKind::TK_Int:

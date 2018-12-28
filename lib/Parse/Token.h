@@ -73,6 +73,7 @@ enum class TokenKind {
   // Preprocessor.
   TK_Hash,
   // Types.
+  TK_Void,
   TK_Char,
   TK_Int,
   TK_Float,

@@ -1,7 +1,6 @@
 #include "Lexer.h"
 #include "Token.h"
 
-#include <algorithm>
 #include <cassert>
 
 namespace fantac::parse {
@@ -44,19 +43,13 @@ const std::vector<std::pair<std::string, TokenKind>> CompoundSymbolMappings = {
     {"//", TokenKind::TK_SingleLineComment}};
 
 const std::vector<std::pair<std::string, TokenKind>> KeywordMappings = {
-    {"if", TokenKind::TK_If},
-    {"else", TokenKind::TK_Else},
-    {"for", TokenKind::TK_For},
-    {"while", TokenKind::TK_While},
-    {"return", TokenKind::TK_Return},
-    {"sizeof", TokenKind::TK_SizeOf},
-    {"char", TokenKind::TK_Char},
-    {"int", TokenKind::TK_Int},
-    {"float", TokenKind::TK_Float},
-    {"double", TokenKind::TK_Double},
-    {"unsigned", TokenKind::TK_Unsigned},
-    {"long", TokenKind::TK_Long},
-    {"enum", TokenKind::TK_Enum},
+    {"if", TokenKind::TK_If},         {"else", TokenKind::TK_Else},
+    {"for", TokenKind::TK_For},       {"while", TokenKind::TK_While},
+    {"return", TokenKind::TK_Return}, {"sizeof", TokenKind::TK_SizeOf},
+    {"void", TokenKind::TK_Void},     {"char", TokenKind::TK_Char},
+    {"int", TokenKind::TK_Int},       {"float", TokenKind::TK_Float},
+    {"double", TokenKind::TK_Double}, {"unsigned", TokenKind::TK_Unsigned},
+    {"long", TokenKind::TK_Long},     {"enum", TokenKind::TK_Enum},
     {"struct", TokenKind::TK_Struct}};
 
 template <typename T>

@@ -104,6 +104,11 @@ ast::ASTPtr Parser::parseStatement() {
   } else if (consumeToken(TokenKind::TK_Return)) {
     // Return statement.
     Logger->info("Found return.");
+    if (consumeToken(TokenKind::TK_Semicolon)) {
+      // Should be in a void function. Maybe check this?
+      return std::make_unique<ast::Return>(nullptr);
+    }
+
     auto ReturnExpr = parseExpr();
     expectToken(TokenKind::TK_Semicolon);
     return std::make_unique<ast::Return>(std::move(ReturnExpr));
@@ -112,6 +117,7 @@ ast::ASTPtr Parser::parseStatement() {
   // Variable declaration.
   const auto IsBeginningOfTypeDecl =
       CurrentToken.Kind == TokenKind::TK_Unsigned ||
+      CurrentToken.Kind == TokenKind::TK_Void ||
       CurrentToken.Kind == TokenKind::TK_Long ||
       CurrentToken.Kind == TokenKind::TK_Char ||
       CurrentToken.Kind == TokenKind::TK_Int ||
@@ -581,20 +587,23 @@ ast::CType Parser::parseType() {
     Length = ast::CLengthKind::CLK_LongLong;
   }
 
-  ast::CTypeKind Type;
-  if (consumeToken(TokenKind::TK_Int)) {
-    Type = ast::CTypeKind::CTK_Int;
-  } else if (consumeToken(TokenKind::TK_Char)) {
-    Type = ast::CTypeKind::CTK_Char;
-  } else if (consumeToken(TokenKind::TK_Float)) {
-    Type = ast::CTypeKind::CTK_Float;
-  } else if (consumeToken(TokenKind::TK_Double)) {
-    Type = ast::CTypeKind::CTK_Double;
-  } else {
-    throw ParseException(fmt::format(
-        "Unknown type name: {}. Expected one of (char, int, float, double).",
-        CurrentToken.Value));
-  }
+  ast::CTypeKind Type = [this]() {
+    if (consumeToken(TokenKind::TK_Int)) {
+      return ast::CTypeKind::CTK_Int;
+    } else if (consumeToken(TokenKind::TK_Char)) {
+      return ast::CTypeKind::CTK_Char;
+    } else if (consumeToken(TokenKind::TK_Float)) {
+      return ast::CTypeKind::CTK_Float;
+    } else if (consumeToken(TokenKind::TK_Double)) {
+      return ast::CTypeKind::CTK_Double;
+    } else if (consumeToken(TokenKind::TK_Void)) {
+      return ast::CTypeKind::CTK_Void;
+    } else {
+      throw ParseException(fmt::format("Unknown type name: {}. Expected "
+                                       "one of (char, int, float, double).",
+                                       CurrentToken.Value));
+    }
+  }();
 
   const bool Pointer = consumeToken(TokenKind::TK_Multiply);
   return ast::CType(Type, Length, Unsigned, Pointer);

@@ -29,6 +29,49 @@ struct CType {
   CType(CTypeKind Type, CLengthKind Length, bool Signed, bool Pointer)
       : Type(Type), Length(Length), Signed(Signed), Pointer(Pointer) {}
 
+  template <typename T> friend T &operator<<(T &Stream, const CType &X) {
+    Stream << "{Type=";
+    switch (X.Type) {
+    case CTypeKind::CTK_Char:
+      Stream << "Char";
+      break;
+    case CTypeKind::CTK_Int:
+      Stream << "Int";
+      break;
+    case CTypeKind::CTK_Float:
+      Stream << "Float";
+      break;
+    case CTypeKind::CTK_Double:
+      Stream << "Double";
+      break;
+    case CTypeKind::CTK_Void:
+      Stream << "Void";
+      break;
+    default:
+      break;
+    }
+
+    Stream << ", Length=";
+    switch (X.Length) {
+    case CLengthKind::CLK_Default:
+      Stream << "Default";
+      break;
+    case CLengthKind::CLK_Long:
+      Stream << "Long";
+      break;
+    case CLengthKind::CLK_LongLong:
+      Stream << "LongLong";
+      break;
+    default:
+      break;
+    }
+
+    Stream << ", Signed=" << (X.Signed ? "true" : "false");
+    Stream << ", Pointer=" << (X.Pointer ? "true" : "false");
+    Stream << "}";
+    return Stream;
+  }
+
   CTypeKind Type;
   CLengthKind Length;
   bool Signed;
@@ -45,9 +88,9 @@ struct FunctionDecl : public IAST {
   virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename T> friend T &operator<<(T &Stream, const FunctionDecl &F) {
-    Stream << "{Name=" << F.Name << ", Args=(";
+    Stream << "{Name=" << F.Name << ", Return=" << F.Return << ", Args=(";
     for (const auto &Arg : F.Args) {
-      Stream << Arg.first;
+      Stream << "{Name=" << Arg.first << ", Type=" << Arg.second << "}";
       if (&Arg != &F.Args.back()) {
         Stream << ", ";
       }
@@ -94,7 +137,7 @@ struct VariableDecl : public IAST {
   virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename T> friend T &operator<<(T &Stream, const VariableDecl &V) {
-    Stream << "{Name=" << V.Name << "}";
+    Stream << "{Name=" << V.Name << ", Type=" << V.Type << "}";
     return Stream;
   }
 
