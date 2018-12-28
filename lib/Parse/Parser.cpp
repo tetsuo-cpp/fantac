@@ -587,7 +587,7 @@ ast::CType Parser::parseType() {
     Length = ast::CLengthKind::CLK_LongLong;
   }
 
-  ast::CTypeKind Type = [this]() {
+  const ast::CTypeKind Type = [this]() {
     if (consumeToken(TokenKind::TK_Int)) {
       return ast::CTypeKind::CTK_Int;
     } else if (consumeToken(TokenKind::TK_Char)) {

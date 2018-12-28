@@ -262,7 +262,7 @@ llvm::AllocaInst *IRGenerator::createEntryBlockAlloca(
 
 llvm::Type *IRGenerator::cTypeToLLVMType(ast::CType X) {
   // TODO: Implement short.
-  llvm::Type *Type = [this, X]() -> llvm::Type * {
+  llvm::Type *const Type = [this, X]() -> llvm::Type * {
     switch (X.Type) {
     case ast::CTypeKind::CTK_Void:
       return Builder.getVoidTy();
