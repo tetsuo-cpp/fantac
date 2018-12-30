@@ -21,7 +21,9 @@ public:
   virtual void visit(BinaryOp &AST) override;
   virtual void visit(IfCond &AST) override;
   virtual void visit(TernaryCond &AST) override;
-  virtual void visit(NumberLiteral &AST) override;
+  virtual void visit(IntegerLiteral &AST) override;
+  virtual void visit(FloatLiteral &AST) override;
+  virtual void visit(CharLiteral &AST) override;
   virtual void visit(StringLiteral &AST) override;
   virtual void visit(VariableRef &AST) override;
   virtual void visit(WhileLoop &AST) override;

@@ -202,8 +202,19 @@ void Lexer::lexNumber(Token &Tok) {
     }
   }
 
-  Logger->debug("Lexed number with value {}.", NumberLiteral);
-  Tok.assign(TokenKind::TK_NumberLiteral, std::move(NumberLiteral));
+  // In the case of decimal, read after the period.
+  if (CurrentChar == '.') {
+    NumberLiteral.push_back(CurrentChar);
+    while (readNextChar() && !isSymbol(CurrentChar, SymbolMappings).first) {
+      NumberLiteral.push_back(CurrentChar);
+    }
+
+    Logger->debug("Lexed float literal with value {}.", NumberLiteral);
+    Tok.assign(TokenKind::TK_FloatLiteral, std::move(NumberLiteral));
+  } else {
+    Logger->debug("Lexed integer literal with value {}.", NumberLiteral);
+    Tok.assign(TokenKind::TK_IntegerLiteral, std::move(NumberLiteral));
+  }
 }
 
 void Lexer::lexChar(Token &Tok) {

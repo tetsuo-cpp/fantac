@@ -13,8 +13,10 @@ std::string tokenKindToString(TokenKind Kind) {
     return "Identifier";
   case TokenKind::TK_Symbol:
     return "Symbol";
-  case TokenKind::TK_NumberLiteral:
-    return "NumberLiteral";
+  case TokenKind::TK_IntegerLiteral:
+    return "IntegerLiteral";
+  case TokenKind::TK_FloatLiteral:
+    return "FloatLiteral";
   case TokenKind::TK_CharLiteral:
     return "CharLiteral";
   case TokenKind::TK_StringLiteral:
@@ -135,6 +137,8 @@ std::string tokenKindToString(TokenKind Kind) {
     return "Double";
   case TokenKind::TK_Unsigned:
     return "Unsigned";
+  case TokenKind::TK_Short:
+    return "Short";
   case TokenKind::TK_Long:
     return "Long";
   case TokenKind::TK_Enum:

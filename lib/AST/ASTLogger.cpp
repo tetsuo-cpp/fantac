@@ -101,8 +101,16 @@ void ASTLogger::visit(TernaryCond &AST) {
   Logger->info("TernaryCond: End.");
 }
 
-void ASTLogger::visit(NumberLiteral &AST) {
-  Logger->info("NumberLiteral: {}.", AST);
+void ASTLogger::visit(IntegerLiteral &AST) {
+  Logger->info("IntegerLiteral: {}.", AST);
+}
+
+void ASTLogger::visit(FloatLiteral &AST) {
+  Logger->info("FloatLiteral: {}.", AST);
+}
+
+void ASTLogger::visit(CharLiteral &AST) {
+  Logger->info("CharLiteral: {}.", AST);
 }
 
 void ASTLogger::visit(StringLiteral &AST) {

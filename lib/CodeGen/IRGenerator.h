@@ -36,7 +36,9 @@ public:
   virtual void visit(ast::BinaryOp &AST) override;
   virtual void visit(ast::IfCond &AST) override;
   virtual void visit(ast::TernaryCond &AST) override;
-  virtual void visit(ast::NumberLiteral &AST) override;
+  virtual void visit(ast::IntegerLiteral &AST) override;
+  virtual void visit(ast::FloatLiteral &AST) override;
+  virtual void visit(ast::CharLiteral &AST) override;
   virtual void visit(ast::StringLiteral &AST) override;
   virtual void visit(ast::VariableRef &AST) override;
   virtual void visit(ast::WhileLoop &AST) override;
@@ -54,7 +56,9 @@ private:
   llvm::Value *visitImpl(ast::BinaryOp &AST);
   llvm::Value *visitImpl(ast::IfCond &AST);
   llvm::Value *visitImpl(ast::TernaryCond &AST);
-  llvm::Value *visitImpl(ast::NumberLiteral &AST);
+  llvm::Value *visitImpl(ast::IntegerLiteral &AST);
+  llvm::Value *visitImpl(ast::FloatLiteral &AST);
+  llvm::Value *visitImpl(ast::CharLiteral &AST);
   llvm::Value *visitImpl(ast::StringLiteral &AST);
   llvm::Value *visitImpl(ast::VariableRef &AST);
   llvm::Value *visitImpl(ast::WhileLoop &AST);

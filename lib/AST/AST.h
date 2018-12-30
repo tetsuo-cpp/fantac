@@ -14,7 +14,6 @@ enum class CTypeKind {
   CTK_Double,
   CTK_Char,
   CTK_Void,
-  CTK_None
 };
 
 enum class CLengthKind {
@@ -22,7 +21,6 @@ enum class CLengthKind {
   CLK_Short,
   CLK_Long,
   CLK_LongLong,
-  CLK_None
 };
 
 struct CType {
@@ -47,12 +45,11 @@ struct CType {
     case CTypeKind::CTK_Void:
       Stream << "Void";
       break;
-    default:
-      break;
     }
 
     Stream << ", Length=";
     switch (X.Length) {
+    case CLengthKind::CLK_Short:
     case CLengthKind::CLK_Default:
       Stream << "Default";
       break;
@@ -62,20 +59,18 @@ struct CType {
     case CLengthKind::CLK_LongLong:
       Stream << "LongLong";
       break;
-    default:
-      break;
     }
 
-    Stream << ", Signed=" << (X.Signed ? "true" : "false");
-    Stream << ", Pointer=" << (X.Pointer ? "true" : "false");
+    Stream << ", Signed=" << X.Signed;
+    Stream << ", Pointer=" << X.Pointer;
     Stream << "}";
     return Stream;
   }
 
-  CTypeKind Type;
-  CLengthKind Length;
-  bool Signed;
-  bool Pointer;
+  const CTypeKind Type;
+  const CLengthKind Length;
+  const bool Signed;
+  const bool Pointer;
 };
 
 struct FunctionDecl : public IAST {
@@ -226,19 +221,47 @@ struct ForLoop : public IAST {
   const std::vector<ASTPtr> Body;
 };
 
-struct NumberLiteral : public IAST {
-  explicit NumberLiteral(unsigned int Value) : Value(Value) {}
+struct IntegerLiteral : public IAST {
+  explicit IntegerLiteral(unsigned int Value) : Value(Value) {}
 
   // IAST impl.
   virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename T>
-  friend T &operator<<(T &Stream, const NumberLiteral &N) {
-    Stream << "{Value=" << N.Value << "}";
+  friend T &operator<<(T &Stream, const IntegerLiteral &I) {
+    Stream << "{Value=" << I.Value << "}";
     return Stream;
   }
 
   const unsigned int Value;
+};
+
+struct FloatLiteral : public IAST {
+  explicit FloatLiteral(double Value) : Value(Value) {}
+
+  // IAST impl.
+  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+
+  template <typename T> friend T &operator<<(T &Stream, const FloatLiteral &F) {
+    Stream << "{Value=" << F.Value << "}";
+    return Stream;
+  }
+
+  const double Value;
+};
+
+struct CharLiteral : public IAST {
+  explicit CharLiteral(char Value) : Value(Value) {}
+
+  // IAST impl.
+  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+
+  template <typename T> friend T &operator<<(T &Stream, const CharLiteral &C) {
+    Stream << "{Value=" << C.Value << "}";
+    return Stream;
+  }
+
+  const char Value;
 };
 
 struct StringLiteral : public IAST {

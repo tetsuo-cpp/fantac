@@ -258,9 +258,15 @@ ast::ASTPtr Parser::parsePrimaryExpr() {
   auto Identifier = CurrentToken.Value;
   Lexer.lex(CurrentToken);
   switch (Kind) {
-  case TokenKind::TK_NumberLiteral:
-    Logger->info("Found number literal.");
-    return std::make_unique<ast::NumberLiteral>(std::stoi(Identifier));
+  case TokenKind::TK_IntegerLiteral:
+    Logger->info("Found integer literal.");
+    return std::make_unique<ast::IntegerLiteral>(std::stoi(Identifier));
+  case TokenKind::TK_FloatLiteral:
+    Logger->info("Found float literal.");
+    return std::make_unique<ast::FloatLiteral>(std::stof(Identifier));
+  case TokenKind::TK_CharLiteral:
+    Logger->info("Found char literal.");
+    return std::make_unique<ast::CharLiteral>(Identifier.front());
   case TokenKind::TK_StringLiteral:
     Logger->info("Found string literal.");
     return std::make_unique<ast::StringLiteral>(std::move(Identifier));
@@ -483,7 +489,7 @@ ast::ASTPtr Parser::parseUnary() {
   const auto Operator = CurrentToken.Kind;
   if (consumeToken(TokenKind::TK_Subtract)) {
     Logger->info("Found negative unary expression.");
-    auto Zero = std::make_unique<ast::NumberLiteral>(0);
+    auto Zero = std::make_unique<ast::IntegerLiteral>(0);
     return std::make_unique<ast::BinaryOp>(Operator, std::move(Zero),
                                            parseUnary());
   }
@@ -497,7 +503,7 @@ ast::ASTPtr Parser::parseUnary() {
   if (consumeToken(TokenKind::TK_Increment) ||
       consumeToken(TokenKind::TK_Decrement)) {
     Logger->info("Found pre-increment/pre-decrement expression.");
-    auto One = std::make_unique<ast::NumberLiteral>(1);
+    auto One = std::make_unique<ast::IntegerLiteral>(1);
     return std::make_unique<ast::BinaryOp>(Operator == TokenKind::TK_Increment
                                                ? TokenKind::TK_Add
                                                : TokenKind::TK_Subtract,
@@ -578,14 +584,20 @@ ast::ASTPtr Parser::parseFunctionCall(std::string &&FunctionName) {
 
 ast::CType Parser::parseType() {
   const bool Unsigned = consumeToken(TokenKind::TK_Unsigned);
-  ast::CLengthKind Length = ast::CLengthKind::CLK_Default;
-  if (consumeToken(TokenKind::TK_Long)) {
-    Length = ast::CLengthKind::CLK_Long;
-  }
 
-  if (consumeToken(TokenKind::TK_Long)) {
-    Length = ast::CLengthKind::CLK_LongLong;
-  }
+  const ast::CLengthKind Length = [this]() {
+    if (consumeToken(TokenKind::TK_Short)) {
+      return ast::CLengthKind::CLK_Short;
+    } else if (consumeToken(TokenKind::TK_Long)) {
+      if (consumeToken(TokenKind::TK_Long)) {
+        return ast::CLengthKind::CLK_LongLong;
+      } else {
+        return ast::CLengthKind::CLK_Long;
+      }
+    } else {
+      return ast::CLengthKind::CLK_Default;
+    }
+  }();
 
   const ast::CTypeKind Type = [this]() {
     if (consumeToken(TokenKind::TK_Int)) {
@@ -599,8 +611,8 @@ ast::CType Parser::parseType() {
     } else if (consumeToken(TokenKind::TK_Void)) {
       return ast::CTypeKind::CTK_Void;
     } else {
-      throw ParseException(fmt::format("Unknown type name: {}. Expected "
-                                       "one of (char, int, float, double).",
+      throw ParseException(fmt::format("Unknown type name: {}. Expected one of "
+                                       "(void, char, int, float, double).",
                                        CurrentToken.Value));
     }
   }();

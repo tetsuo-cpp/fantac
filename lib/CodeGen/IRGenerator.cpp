@@ -26,7 +26,11 @@ void IRGenerator::visit(ast::IfCond &AST) { visitAndAssign(AST); }
 
 void IRGenerator::visit(ast::TernaryCond &AST) { visitAndAssign(AST); }
 
-void IRGenerator::visit(ast::NumberLiteral &AST) { visitAndAssign(AST); }
+void IRGenerator::visit(ast::IntegerLiteral &AST) { visitAndAssign(AST); }
+
+void IRGenerator::visit(ast::FloatLiteral &AST) { visitAndAssign(AST); }
+
+void IRGenerator::visit(ast::CharLiteral &AST) { visitAndAssign(AST); }
 
 void IRGenerator::visit(ast::StringLiteral &AST) { visitAndAssign(AST); }
 
@@ -186,8 +190,16 @@ llvm::Value *IRGenerator::visitImpl(ast::TernaryCond &AST) {
   return nullptr;
 }
 
-llvm::Value *IRGenerator::visitImpl(ast::NumberLiteral &AST) {
+llvm::Value *IRGenerator::visitImpl(ast::IntegerLiteral &AST) {
   return llvm::ConstantInt::get(Context, llvm::APInt(32, AST.Value));
+}
+
+llvm::Value *IRGenerator::visitImpl(ast::FloatLiteral &AST) {
+  return llvm::ConstantFP::get(Builder.getFloatTy(), AST.Value);
+}
+
+llvm::Value *IRGenerator::visitImpl(ast::CharLiteral &AST) {
+  return llvm::ConstantInt::get(Builder.getInt8Ty(), AST.Value);
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::StringLiteral &AST) {
@@ -274,19 +286,15 @@ llvm::Type *IRGenerator::cTypeToLLVMType(ast::CType X) {
       return Builder.getFloatTy();
     case ast::CTypeKind::CTK_Int:
       switch (X.Length) {
+      case ast::CLengthKind::CLK_Short:
+        return Builder.getInt16Ty();
       case ast::CLengthKind::CLK_Default:
       case ast::CLengthKind::CLK_Long:
         return Builder.getInt32Ty();
       case ast::CLengthKind::CLK_LongLong:
         return Builder.getInt64Ty();
-      default:
-        break;
       }
-    default:
-      break;
     }
-
-    throw CodeGenException("Bad CType to LLVM Type mapping.");
   }();
 
   return X.Pointer ? Type->getPointerTo() : Type;

@@ -8,7 +8,8 @@ enum class TokenKind {
   TK_Identifier,
   TK_Symbol,
   // Literals.
-  TK_NumberLiteral,
+  TK_IntegerLiteral,
+  TK_FloatLiteral,
   TK_CharLiteral,
   TK_StringLiteral,
   // Keywords.
@@ -79,6 +80,7 @@ enum class TokenKind {
   TK_Float,
   TK_Double,
   TK_Unsigned,
+  TK_Short,
   TK_Long,
   TK_Enum,
   TK_Struct,
