@@ -49,8 +49,8 @@ const std::vector<std::pair<std::string, TokenKind>> KeywordMappings = {
     {"void", TokenKind::TK_Void},     {"char", TokenKind::TK_Char},
     {"int", TokenKind::TK_Int},       {"float", TokenKind::TK_Float},
     {"double", TokenKind::TK_Double}, {"unsigned", TokenKind::TK_Unsigned},
-    {"long", TokenKind::TK_Long},     {"enum", TokenKind::TK_Enum},
-    {"struct", TokenKind::TK_Struct}};
+    {"short", TokenKind::TK_Short},   {"long", TokenKind::TK_Long},
+    {"enum", TokenKind::TK_Enum},     {"struct", TokenKind::TK_Struct}};
 
 template <typename T>
 std::pair<bool, TokenKind>

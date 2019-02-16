@@ -1,4 +1,3 @@
-#include <iostream>
 #include <stdio.h>
 
 extern "C" int putchari(int X) {
@@ -11,13 +10,18 @@ extern "C" int printi(int X) {
   return 0;
 }
 
+extern "C" float printfl(float X) {
+  fprintf(stdout, "%f\n", X);
+  return 0.0;
+}
+
 extern "C" {
-int bar(int);
+float bar(float);
 }
 
 int main() {
-  std::cout << "Running Bar." << std::endl;
-  bar(2);
-  bar(-1);
-  std::cout << "Exiting Bar." << std::endl;
+  printf("Running Bar.\n");
+  bar(2.0);
+  bar(-1.3);
+  printf("Exiting Bar.\n");
 }

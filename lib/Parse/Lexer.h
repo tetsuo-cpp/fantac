@@ -11,7 +11,8 @@ public:
   Lexer(const char *Begin, const char *End, util::ILoggerFactory &LF);
   virtual ~Lexer() = default;
 
-  virtual bool lex(Token &Tok) override;
+  // ILexer impl.
+  bool lex(Token &Tok) override;
 
 private:
   bool lexToken(Token &Tok);

@@ -20,6 +20,7 @@ public:
   Parser(ILexer &Lexer, util::ILoggerFactory &LF);
   virtual ~Parser() = default;
 
+  // IParser impl.
   ast::ASTPtr parseTopLevelExpr() override;
 
 private:

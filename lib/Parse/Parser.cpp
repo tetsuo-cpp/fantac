@@ -14,6 +14,7 @@ Parser::Parser(ILexer &Lexer, util::ILoggerFactory &LF)
 
 ast::ASTPtr Parser::parseTopLevelExpr() {
   Logger->info("Parsing top level expression.");
+
   if (CurrentToken.Kind == TokenKind::TK_EOF) {
     Logger->info("Encountered end of file. Stopping parsing.");
     return nullptr;
@@ -115,7 +116,7 @@ ast::ASTPtr Parser::parseStatement() {
   }
 
   // Variable declaration.
-  const auto IsBeginningOfTypeDecl =
+  const auto IsBeginningOfVarDecl =
       CurrentToken.Kind == TokenKind::TK_Unsigned ||
       CurrentToken.Kind == TokenKind::TK_Void ||
       CurrentToken.Kind == TokenKind::TK_Long ||
@@ -124,7 +125,7 @@ ast::ASTPtr Parser::parseStatement() {
       CurrentToken.Kind == TokenKind::TK_Float ||
       CurrentToken.Kind == TokenKind::TK_Double;
 
-  if (IsBeginningOfTypeDecl) {
+  if (IsBeginningOfVarDecl) {
     const auto Type = parseType();
     return parseVariableDecl(Type);
   }
@@ -197,7 +198,7 @@ ast::ASTPtr Parser::parseWhileLoop() {
 
   std::vector<ast::ASTPtr> Body;
 
-  if (consumeToken(TokenKind::TK_CloseBrace)) {
+  if (consumeToken(TokenKind::TK_OpenBrace)) {
     while (!consumeToken(TokenKind::TK_CloseBrace)) {
       Body.push_back(parseStatement());
     }
@@ -253,7 +254,6 @@ ast::ASTPtr Parser::parseExpr() {
 ast::ASTPtr Parser::parsePrimaryExpr() {
   Logger->debug("Parsing primary expression.");
 
-  // TODO: Support floats and more.
   const auto Kind = CurrentToken.Kind;
   auto Identifier = CurrentToken.Value;
   Lexer.lex(CurrentToken);
@@ -617,7 +617,11 @@ ast::CType Parser::parseType() {
     }
   }();
 
-  const bool Pointer = consumeToken(TokenKind::TK_Multiply);
+  unsigned int Pointer = 0;
+  while (consumeToken(TokenKind::TK_Multiply)) {
+    ++Pointer;
+  }
+
   return ast::CType(Type, Length, Unsigned, Pointer);
 }
 

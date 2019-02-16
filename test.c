@@ -2,24 +2,29 @@
 
 void printf(char *msg);
 int printi(int x);
+float printfl(float X);
 
-int foo(int x, int y);
+float foo(float x, float y);
 
-int bar(int x) {
+float bar(float x) {
   printf("Testing printf.");
-  int y = foo(x, x);
-  printi(x);
-  printi(y);
+  float y = foo(x, x);
+  printfl(x);
+  printfl(y);
   if (x > y) {
-    printi(x);
+    printfl(x);
   } else {
-    printi(99);
+    printfl(99.3);
+  }
+
+  printf("Executing loop.");
+  int i = 0;
+  while (i < 10) {
+    printi(i);
+    i = i + 1;
   }
 
   return x;
 }
 
-int foo(int x, int y) {
-  int z;
-  return 100;
-}
+float foo(float x, float y) { return 100.0; }

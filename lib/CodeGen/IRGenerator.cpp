@@ -130,6 +130,8 @@ llvm::Value *IRGenerator::visitImpl(ast::UnaryOp &AST) {
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::BinaryOp &AST) {
+  Logger->info("Generating IR for BinaryOp.");
+
   // Evaluate from left to right.
   AST.Left->accept(*this);
   AST.Right->accept(*this);
@@ -138,11 +140,15 @@ llvm::Value *IRGenerator::visitImpl(ast::BinaryOp &AST) {
   case parse::TokenKind::TK_LogicalAnd:
     return nullptr;
   case parse::TokenKind::TK_GreaterThan:
-    return Builder.CreateICmpSGT(AST.Left->LLVMValue, AST.Right->LLVMValue);
+    return greaterThan(AST.Left->LLVMValue, AST.Right->LLVMValue);
+  case parse::TokenKind::TK_LessThan:
+    return greaterThan(AST.Right->LLVMValue, AST.Left->LLVMValue);
   case parse::TokenKind::TK_Equals:
-    return Builder.CreateICmpEQ(AST.Left->LLVMValue, AST.Right->LLVMValue);
+    return equals(AST.Left->LLVMValue, AST.Right->LLVMValue);
   case parse::TokenKind::TK_Assign:
-    return Builder.CreateStore(AST.Right->LLVMValue, AST.Left->LLVMValue);
+    return assign(AST.Left->LLVMValue, AST.Right->LLVMValue);
+  case parse::TokenKind::TK_Add:
+    return add(AST.Left->LLVMValue, AST.Right->LLVMValue);
   default:
     throw CodeGenException(
         fmt::format("Invalid binary operator {}.", AST.Operator));
@@ -150,6 +156,8 @@ llvm::Value *IRGenerator::visitImpl(ast::BinaryOp &AST) {
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::IfCond &AST) {
+  Logger->info("Generating IR for IfCond.");
+
   AST.Condition->accept(*this);
   auto *CondV = AST.Condition->LLVMValue;
   if (!CondV) {
@@ -186,27 +194,71 @@ llvm::Value *IRGenerator::visitImpl(ast::IfCond &AST) {
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::TernaryCond &AST) {
-  static_cast<void>(AST);
-  return nullptr;
+  Logger->info("Generating IR for TernaryCond.");
+
+  AST.Condition->accept(*this);
+  auto *CondV = AST.Condition->LLVMValue;
+  if (!CondV) {
+    throw CodeGenException("Condition in ternary statement evaluates to void.");
+  }
+
+  llvm::Function *CurrentF = Builder.GetInsertBlock()->getParent();
+  llvm::BasicBlock *ThenBB =
+      llvm::BasicBlock::Create(Context, "then", CurrentF);
+  llvm::BasicBlock *ElseBB = llvm::BasicBlock::Create(Context, "else");
+  llvm::BasicBlock *MergeBB = llvm::BasicBlock::Create(Context, "ifcont");
+
+  Builder.CreateCondBr(CondV, ThenBB, ElseBB);
+  Builder.SetInsertPoint(ThenBB);
+
+  AST.Then->accept(*this);
+
+  Builder.CreateBr(MergeBB);
+  ThenBB = Builder.GetInsertBlock();
+  CurrentF->getBasicBlockList().push_back(ElseBB);
+  Builder.SetInsertPoint(ElseBB);
+
+  AST.Else->accept(*this);
+
+  Builder.CreateBr(MergeBB);
+  ElseBB = Builder.GetInsertBlock();
+  CurrentF->getBasicBlockList().push_back(MergeBB);
+  Builder.SetInsertPoint(MergeBB);
+
+  llvm::PHINode *PN =
+      Builder.CreatePHI(AST.Then->LLVMValue->getType(), 2, "terntmp");
+  PN->addIncoming(AST.Then->LLVMValue, ThenBB);
+  PN->addIncoming(AST.Else->LLVMValue, ElseBB);
+  return PN;
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::IntegerLiteral &AST) {
+  Logger->info("Generating IR for IntegerLiteral.");
+
   return llvm::ConstantInt::get(Context, llvm::APInt(32, AST.Value));
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::FloatLiteral &AST) {
+  Logger->info("Generating IR for FloatLiteral.");
+
   return llvm::ConstantFP::get(Builder.getFloatTy(), AST.Value);
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::CharLiteral &AST) {
+  Logger->info("Generating IR for CharLiteral.");
+
   return llvm::ConstantInt::get(Builder.getInt8Ty(), AST.Value);
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::StringLiteral &AST) {
+  Logger->info("Generating IR for StringLiteral.");
+
   return Builder.CreateGlobalStringPtr(AST.Value);
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::VariableRef &AST) {
+  Logger->info("Generating IR for VariableRef.");
+
   const auto VarIter = NamedVariables.find(AST.Name);
   if (VarIter == NamedVariables.end()) {
     throw CodeGenException(
@@ -217,7 +269,31 @@ llvm::Value *IRGenerator::visitImpl(ast::VariableRef &AST) {
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::WhileLoop &AST) {
-  static_cast<void>(AST);
+  Logger->info("Generating IR for WhileLoop.");
+
+  llvm::Function *F = Builder.GetInsertBlock()->getParent();
+
+  AST.Condition->accept(*this);
+  llvm::Value *CondV = AST.Condition->LLVMValue;
+  if (!CondV) {
+    throw CodeGenException("Condition in while loop evaluates to void.");
+  }
+
+  llvm::BasicBlock *LoopBB = llvm::BasicBlock::Create(Context, "loop", F);
+  llvm::BasicBlock *AfterLoopBB =
+      llvm::BasicBlock::Create(Context, "afterloop", F);
+
+  Builder.CreateCondBr(CondV, LoopBB, AfterLoopBB);
+  F->getBasicBlockList().push_back(LoopBB);
+  Builder.SetInsertPoint(LoopBB);
+
+  for (const auto &Instruction : AST.Body) {
+    Instruction->accept(*this);
+  }
+
+  Builder.CreateCondBr(CondV, LoopBB, AfterLoopBB);
+  F->getBasicBlockList().push_back(AfterLoopBB);
+  Builder.SetInsertPoint(AfterLoopBB);
   return nullptr;
 }
 
@@ -232,6 +308,8 @@ llvm::Value *IRGenerator::visitImpl(ast::MemberAccess &AST) {
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::FunctionCall &AST) {
+  Logger->info("Generating IR for FunctionCall.");
+
   const auto FunctionIter = Functions.find(AST.Name);
   if (FunctionIter == Functions.end()) {
     throw CodeGenException(fmt::format(
@@ -255,6 +333,8 @@ llvm::Value *IRGenerator::visitImpl(ast::FunctionCall &AST) {
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::Return &AST) {
+  Logger->info("Generating IR for Return.");
+
   if (AST.Expr) {
     AST.Expr->accept(*this);
     Builder.CreateRet(AST.Expr->LLVMValue);
@@ -273,8 +353,7 @@ llvm::AllocaInst *IRGenerator::createEntryBlockAlloca(
 }
 
 llvm::Type *IRGenerator::cTypeToLLVMType(ast::CType X) {
-  // TODO: Implement short.
-  llvm::Type *const Type = [this, X]() -> llvm::Type * {
+  auto *Type = [this, X]() -> llvm::Type * {
     switch (X.Type) {
     case ast::CTypeKind::CTK_Void:
       return Builder.getVoidTy();
@@ -297,7 +376,51 @@ llvm::Type *IRGenerator::cTypeToLLVMType(ast::CType X) {
     }
   }();
 
-  return X.Pointer ? Type->getPointerTo() : Type;
+  for (unsigned int i = 0; i < X.Pointer; ++i) {
+    Type = Type->getPointerTo();
+  }
+
+  return Type;
+}
+
+llvm::Value *IRGenerator::greaterThan(llvm::Value *Left, llvm::Value *Right) {
+  if (Left->getType()->isIntegerTy() && Right->getType()->isIntegerTy()) {
+    return Builder.CreateICmpSGT(Left, Right);
+  } else if ((Left->getType()->isDoubleTy() &&
+              Right->getType()->isDoubleTy()) ||
+             (Left->getType()->isFloatTy() && Right->getType()->isFloatTy())) {
+    return Builder.CreateFCmpOGT(Left, Right);
+  } else {
+    throw CodeGenException("Invalid greater than op.");
+  }
+}
+
+llvm::Value *IRGenerator::equals(llvm::Value *Left, llvm::Value *Right) {
+  if (Left->getType()->isIntegerTy() && Right->getType()->isIntegerTy()) {
+    return Builder.CreateICmpEQ(Left, Right);
+  } else if ((Left->getType()->isDoubleTy() &&
+              Right->getType()->isDoubleTy()) ||
+             (Left->getType()->isFloatTy() && Right->getType()->isFloatTy())) {
+    return Builder.CreateFCmpOEQ(Left, Right);
+  } else {
+    throw CodeGenException("Invalid equals op.");
+  }
+}
+
+llvm::Value *IRGenerator::assign(llvm::Value *Left, llvm::Value *Right) {
+  return Builder.CreateStore(Right, Left);
+}
+
+llvm::Value *IRGenerator::add(llvm::Value *Left, llvm::Value *Right) {
+  if (Left->getType()->isIntegerTy() && Right->getType()->isIntegerTy()) {
+    return Builder.CreateAdd(Left, Right);
+  } else if ((Left->getType()->isDoubleTy() &&
+              Right->getType()->isDoubleTy()) ||
+             (Left->getType()->isFloatTy() && Right->getType()->isFloatTy())) {
+    return Builder.CreateFAdd(Left, Right);
+  } else {
+    throw CodeGenException("Invalid add.");
+  }
 }
 
 } // namespace fantac::codegen

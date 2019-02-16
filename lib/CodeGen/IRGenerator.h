@@ -25,27 +25,27 @@ public:
 
 class IRGenerator : public ast::IASTVisitor {
 public:
-  IRGenerator(util::ILoggerFactory &LF);
+  explicit IRGenerator(util::ILoggerFactory &LF);
   virtual ~IRGenerator();
 
   // IASTVisitor impl.
-  virtual void visit(ast::FunctionDecl &AST) override;
-  virtual void visit(ast::FunctionDef &AST) override;
-  virtual void visit(ast::VariableDecl &AST) override;
-  virtual void visit(ast::UnaryOp &AST) override;
-  virtual void visit(ast::BinaryOp &AST) override;
-  virtual void visit(ast::IfCond &AST) override;
-  virtual void visit(ast::TernaryCond &AST) override;
-  virtual void visit(ast::IntegerLiteral &AST) override;
-  virtual void visit(ast::FloatLiteral &AST) override;
-  virtual void visit(ast::CharLiteral &AST) override;
-  virtual void visit(ast::StringLiteral &AST) override;
-  virtual void visit(ast::VariableRef &AST) override;
-  virtual void visit(ast::WhileLoop &AST) override;
-  virtual void visit(ast::ForLoop &AST) override;
-  virtual void visit(ast::MemberAccess &AST) override;
-  virtual void visit(ast::FunctionCall &AST) override;
-  virtual void visit(ast::Return &AST) override;
+  void visit(ast::FunctionDecl &AST) override;
+  void visit(ast::FunctionDef &AST) override;
+  void visit(ast::VariableDecl &AST) override;
+  void visit(ast::UnaryOp &AST) override;
+  void visit(ast::BinaryOp &AST) override;
+  void visit(ast::IfCond &AST) override;
+  void visit(ast::TernaryCond &AST) override;
+  void visit(ast::IntegerLiteral &AST) override;
+  void visit(ast::FloatLiteral &AST) override;
+  void visit(ast::CharLiteral &AST) override;
+  void visit(ast::StringLiteral &AST) override;
+  void visit(ast::VariableRef &AST) override;
+  void visit(ast::WhileLoop &AST) override;
+  void visit(ast::ForLoop &AST) override;
+  void visit(ast::MemberAccess &AST) override;
+  void visit(ast::FunctionCall &AST) override;
+  void visit(ast::Return &AST) override;
 
 private:
   template <typename T> void visitAndAssign(T &AST);
@@ -70,6 +70,10 @@ private:
                                            const std::string &VariableName,
                                            llvm::Type *Type);
   llvm::Type *cTypeToLLVMType(ast::CType);
+  llvm::Value *greaterThan(llvm::Value *, llvm::Value *);
+  llvm::Value *equals(llvm::Value *, llvm::Value *);
+  llvm::Value *assign(llvm::Value *, llvm::Value *);
+  llvm::Value *add(llvm::Value *, llvm::Value *);
 
   llvm::LLVMContext Context;
   llvm::IRBuilder<> Builder;

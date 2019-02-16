@@ -24,7 +24,7 @@ enum class CLengthKind {
 };
 
 struct CType {
-  CType(CTypeKind Type, CLengthKind Length, bool Signed, bool Pointer)
+  CType(CTypeKind Type, CLengthKind Length, bool Signed, unsigned int Pointer)
       : Type(Type), Length(Length), Signed(Signed), Pointer(Pointer) {}
 
   template <typename T> friend T &operator<<(T &Stream, const CType &X) {
@@ -50,6 +50,8 @@ struct CType {
     Stream << ", Length=";
     switch (X.Length) {
     case CLengthKind::CLK_Short:
+      Stream << "Short";
+      break;
     case CLengthKind::CLK_Default:
       Stream << "Default";
       break;
@@ -70,7 +72,7 @@ struct CType {
   const CTypeKind Type;
   const CLengthKind Length;
   const bool Signed;
-  const bool Pointer;
+  const unsigned int Pointer;
 };
 
 struct FunctionDecl : public IAST {
@@ -80,7 +82,7 @@ struct FunctionDecl : public IAST {
         Args(std::forward<T1>(Args)) {}
 
   // IAST impl.
-  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+  void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename T> friend T &operator<<(T &Stream, const FunctionDecl &F) {
     Stream << "{Name=" << F.Name << ", Return=" << F.Return << ", Args=(";
@@ -111,7 +113,7 @@ struct FunctionDef : public IAST {
         Body(std::move(Body)) {}
 
   // IAST impl.
-  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+  void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename T> friend T &operator<<(T &Stream, const FunctionDef &F) {
     Stream << "{Decl=" << *F.Decl << "}";
@@ -129,7 +131,7 @@ struct VariableDecl : public IAST {
         AssignmentExpr(std::move(AssignmentExpr)) {}
 
   // IAST impl.
-  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+  void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename T> friend T &operator<<(T &Stream, const VariableDecl &V) {
     Stream << "{Name=" << V.Name << ", Type=" << V.Type << "}";
@@ -146,7 +148,7 @@ struct UnaryOp : public IAST {
       : Operator(Operator), Expr(std::move(Expr)) {}
 
   // IAST impl.
-  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+  void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename T> friend T &operator<<(T &Stream, const UnaryOp &U) {
     Stream << "{Operator=" << parse::tokenKindToString(U.Operator) << "}";
@@ -162,7 +164,7 @@ struct BinaryOp : public IAST {
       : Operator(Operator), Left(std::move(Left)), Right(std::move(Right)) {}
 
   // IAST impl.
-  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+  void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename T> friend T &operator<<(T &Stream, const BinaryOp &B) {
     Stream << "{Operator=" << parse::tokenKindToString(B.Operator) << "}";
@@ -180,7 +182,7 @@ struct IfCond : public IAST {
         Else(std::move(Else)) {}
 
   // IAST impl.
-  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); };
+  void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); };
 
   const ASTPtr Condition;
   const std::vector<ASTPtr> Then, Else;
@@ -192,7 +194,7 @@ struct TernaryCond : public IAST {
         Else(std::move(Else)) {}
 
   // IAST impl.
-  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+  void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   const ASTPtr Condition, Then, Else;
 };
@@ -202,7 +204,7 @@ struct WhileLoop : public IAST {
       : Condition(std::move(Condition)), Body(std::move(Body)) {}
 
   // IAST impl.
-  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+  void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   const ASTPtr Condition;
   const std::vector<ASTPtr> Body;
@@ -215,7 +217,7 @@ struct ForLoop : public IAST {
         Iteration(std::move(Iteration)), Body(std::move(Body)) {}
 
   // IAST impl.
-  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+  void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   const ASTPtr Init, Condition, Iteration;
   const std::vector<ASTPtr> Body;
@@ -225,7 +227,7 @@ struct IntegerLiteral : public IAST {
   explicit IntegerLiteral(unsigned int Value) : Value(Value) {}
 
   // IAST impl.
-  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+  void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename T>
   friend T &operator<<(T &Stream, const IntegerLiteral &I) {
@@ -240,7 +242,7 @@ struct FloatLiteral : public IAST {
   explicit FloatLiteral(double Value) : Value(Value) {}
 
   // IAST impl.
-  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+  void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename T> friend T &operator<<(T &Stream, const FloatLiteral &F) {
     Stream << "{Value=" << F.Value << "}";
@@ -254,7 +256,7 @@ struct CharLiteral : public IAST {
   explicit CharLiteral(char Value) : Value(Value) {}
 
   // IAST impl.
-  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+  void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename T> friend T &operator<<(T &Stream, const CharLiteral &C) {
     Stream << "{Value=" << C.Value << "}";
@@ -269,7 +271,7 @@ struct StringLiteral : public IAST {
   explicit StringLiteral(T &&Value) : Value(std::forward<T>(Value)) {}
 
   // IAST impl.
-  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+  void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename T>
   friend T &operator<<(T &Stream, const StringLiteral &S) {
@@ -285,7 +287,7 @@ struct VariableRef : public IAST {
   explicit VariableRef(T &&Name) : Name(std::forward<T>(Name)) {}
 
   // IAST impl.
-  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+  void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename T> friend T &operator<<(T &Stream, const VariableRef &V) {
     Stream << "{Name=" << V.Name << "}";
@@ -301,7 +303,7 @@ struct MemberAccess : public IAST {
       : Expr(std::move(Expr)), MemberName(std::forward<T>(MemberName)) {}
 
   // IAST impl.
-  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+  void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename T> friend T &operator<<(T &Stream, const MemberAccess &M) {
     Stream << "{MemberName=" << M.MemberName << "}";
@@ -318,7 +320,7 @@ struct FunctionCall : public IAST {
       : Name(std::forward<T>(Name)), Args(std::move(Args)) {}
 
   // IAST impl.
-  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+  void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   template <typename T> friend T &operator<<(T &Stream, const FunctionCall &F) {
     Stream << "{Name=" << F.Name << "}";
@@ -333,7 +335,7 @@ struct Return : public IAST {
   Return(ASTPtr &&Expr) : Expr(std::move(Expr)) {}
 
   // IAST impl.
-  virtual void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+  void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   const ASTPtr Expr;
 };
