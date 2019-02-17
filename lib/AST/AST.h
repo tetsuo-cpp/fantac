@@ -103,7 +103,7 @@ struct FunctionDecl : public IAST {
 };
 
 struct FunctionDef : public IAST {
-  FunctionDef(std::unique_ptr<FunctionDecl> &&Decl, std::vector<ASTPtr> &&Body)
+  FunctionDef(std::unique_ptr<FunctionDecl> Decl, std::vector<ASTPtr> &&Body)
       : Decl(std::move(Decl)), Body(std::move(Body)) {}
 
   template <typename T0, typename T1>
@@ -126,7 +126,7 @@ struct FunctionDef : public IAST {
 
 struct VariableDecl : public IAST {
   template <typename T>
-  VariableDecl(CType Type, T &&Name, ASTPtr &&AssignmentExpr = nullptr)
+  VariableDecl(CType Type, T &&Name, ASTPtr AssignmentExpr = nullptr)
       : Type(Type), Name(std::forward<T>(Name)),
         AssignmentExpr(std::move(AssignmentExpr)) {}
 
@@ -144,7 +144,7 @@ struct VariableDecl : public IAST {
 };
 
 struct UnaryOp : public IAST {
-  UnaryOp(parse::TokenKind Operator, ASTPtr &&Expr)
+  UnaryOp(parse::TokenKind Operator, ASTPtr Expr)
       : Operator(Operator), Expr(std::move(Expr)) {}
 
   // IAST impl.
@@ -160,7 +160,7 @@ struct UnaryOp : public IAST {
 };
 
 struct BinaryOp : public IAST {
-  BinaryOp(parse::TokenKind Operator, ASTPtr &&Left, ASTPtr &&Right)
+  BinaryOp(parse::TokenKind Operator, ASTPtr Left, ASTPtr Right)
       : Operator(Operator), Left(std::move(Left)), Right(std::move(Right)) {}
 
   // IAST impl.
@@ -189,7 +189,7 @@ struct IfCond : public IAST {
 };
 
 struct TernaryCond : public IAST {
-  TernaryCond(ASTPtr &&Condition, ASTPtr &&Then, ASTPtr &&Else)
+  TernaryCond(ASTPtr Condition, ASTPtr Then, ASTPtr Else)
       : Condition(std::move(Condition)), Then(std::move(Then)),
         Else(std::move(Else)) {}
 
@@ -200,7 +200,7 @@ struct TernaryCond : public IAST {
 };
 
 struct WhileLoop : public IAST {
-  WhileLoop(ASTPtr &&Condition, std::vector<ASTPtr> &&Body)
+  WhileLoop(ASTPtr Condition, std::vector<ASTPtr> &&Body)
       : Condition(std::move(Condition)), Body(std::move(Body)) {}
 
   // IAST impl.
@@ -211,7 +211,7 @@ struct WhileLoop : public IAST {
 };
 
 struct ForLoop : public IAST {
-  ForLoop(ASTPtr &&Init, ASTPtr &&Condition, ASTPtr &&Iteration,
+  ForLoop(ASTPtr Init, ASTPtr Condition, ASTPtr Iteration,
           std::vector<ASTPtr> &&Body)
       : Init(std::move(Init)), Condition(std::move(Condition)),
         Iteration(std::move(Iteration)), Body(std::move(Body)) {}
@@ -299,7 +299,7 @@ struct VariableRef : public IAST {
 
 struct MemberAccess : public IAST {
   template <typename T>
-  MemberAccess(ASTPtr &&Expr, T &&MemberName)
+  MemberAccess(ASTPtr Expr, T &&MemberName)
       : Expr(std::move(Expr)), MemberName(std::forward<T>(MemberName)) {}
 
   // IAST impl.
@@ -332,7 +332,7 @@ struct FunctionCall : public IAST {
 };
 
 struct Return : public IAST {
-  Return(ASTPtr &&Expr) : Expr(std::move(Expr)) {}
+  explicit Return(ASTPtr Expr) : Expr(std::move(Expr)) {}
 
   // IAST impl.
   void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
