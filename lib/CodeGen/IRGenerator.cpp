@@ -376,7 +376,7 @@ llvm::Type *IRGenerator::cTypeToLLVMType(ast::CType X) {
     }
   }();
 
-  for (unsigned int i = 0; i < X.Pointer; ++i) {
+  for (unsigned int Index = 0; Index < X.Pointer; ++Index) {
     Type = Type->getPointerTo();
   }
 
