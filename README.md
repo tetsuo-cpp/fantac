@@ -25,4 +25,4 @@ You can generate LLVM IR for a C source file like so.
 See ```build.sh``` for an example of how you can use this in conjunction with ```llc``` to compile to an executable.
 ## References
 * [9cc by Rui Ueyama](https://github.com/rui314/9cc).
-* [QCC by uint256_t](https://github.com/maekawatoshiki/qcc).
+* [qcc by uint256_t](https://github.com/maekawatoshiki/qcc).
