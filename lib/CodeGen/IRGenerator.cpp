@@ -111,12 +111,14 @@ llvm::Value *IRGenerator::visitImpl(ast::VariableDecl &AST) {
   auto *F = Builder.GetInsertBlock()->getParent();
 
   llvm::Type *VariableType = cTypeToLLVMType(AST.Type);
-  llvm::Value *InitialValue = llvm::ConstantInt::get(VariableType, 0);
-
-  if (AST.AssignmentExpr) {
-    AST.AssignmentExpr->accept(*this);
-    InitialValue = AST.AssignmentExpr->LLVMValue;
-  }
+  llvm::Value *InitialValue = [this, &AST, VariableType]() -> llvm::Value * {
+    if (AST.AssignmentExpr) {
+      AST.AssignmentExpr->accept(*this);
+      return AST.AssignmentExpr->LLVMValue;
+    } else {
+      return llvm::ConstantInt::get(VariableType, 0);
+    }
+  }();
 
   auto *Alloca = createEntryBlockAlloca(F, AST.Name, VariableType);
   Builder.CreateStore(InitialValue, Alloca);
