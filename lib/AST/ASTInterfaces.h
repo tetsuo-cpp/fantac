@@ -34,30 +34,30 @@ class IASTVisitor {
 public:
   virtual ~IASTVisitor() = default;
 
-  virtual void visit(FunctionDecl &AST) = 0;
-  virtual void visit(FunctionDef &AST) = 0;
-  virtual void visit(VariableDecl &AST) = 0;
-  virtual void visit(UnaryOp &AST) = 0;
-  virtual void visit(BinaryOp &AST) = 0;
-  virtual void visit(IfCond &AST) = 0;
-  virtual void visit(TernaryCond &AST) = 0;
-  virtual void visit(IntegerLiteral &AST) = 0;
-  virtual void visit(FloatLiteral &AST) = 0;
-  virtual void visit(CharLiteral &AST) = 0;
-  virtual void visit(StringLiteral &AST) = 0;
-  virtual void visit(VariableRef &AST) = 0;
-  virtual void visit(WhileLoop &AST) = 0;
-  virtual void visit(ForLoop &AST) = 0;
-  virtual void visit(MemberAccess &AST) = 0;
-  virtual void visit(FunctionCall &AST) = 0;
-  virtual void visit(Return &AST) = 0;
+  virtual void visit(FunctionDecl &) = 0;
+  virtual void visit(FunctionDef &) = 0;
+  virtual void visit(VariableDecl &) = 0;
+  virtual void visit(UnaryOp &) = 0;
+  virtual void visit(BinaryOp &) = 0;
+  virtual void visit(IfCond &) = 0;
+  virtual void visit(TernaryCond &) = 0;
+  virtual void visit(IntegerLiteral &) = 0;
+  virtual void visit(FloatLiteral &) = 0;
+  virtual void visit(CharLiteral &) = 0;
+  virtual void visit(StringLiteral &) = 0;
+  virtual void visit(VariableRef &) = 0;
+  virtual void visit(WhileLoop &) = 0;
+  virtual void visit(ForLoop &) = 0;
+  virtual void visit(MemberAccess &) = 0;
+  virtual void visit(FunctionCall &) = 0;
+  virtual void visit(Return &) = 0;
 };
 
 // Base class for all AST nodes.
 struct IAST {
   virtual ~IAST() = default;
 
-  virtual void accept(IASTVisitor &Visitor) = 0;
+  virtual void accept(IASTVisitor &) = 0;
 
   llvm::Value *LLVMValue = nullptr;
 };

@@ -2,38 +2,33 @@
 
 #include "ASTInterfaces.h"
 
-#include <Util/UtilInterfaces.h>
-
 #include <cassert>
 
 namespace fantac::ast {
 
 class ASTLogger : public IASTVisitor {
 public:
-  explicit ASTLogger(util::ILoggerFactory &LF);
+  ASTLogger();
   virtual ~ASTLogger() = default;
 
   // IASTVisitor impl.
-  void visit(FunctionDecl &AST) override;
-  void visit(FunctionDef &AST) override;
-  void visit(VariableDecl &AST) override;
-  void visit(UnaryOp &AST) override;
-  void visit(BinaryOp &AST) override;
-  void visit(IfCond &AST) override;
-  void visit(TernaryCond &AST) override;
-  void visit(IntegerLiteral &AST) override;
-  void visit(FloatLiteral &AST) override;
-  void visit(CharLiteral &AST) override;
-  void visit(StringLiteral &AST) override;
-  void visit(VariableRef &AST) override;
-  void visit(WhileLoop &AST) override;
-  void visit(ForLoop &AST) override;
-  void visit(MemberAccess &AST) override;
-  void visit(FunctionCall &AST) override;
-  void visit(Return &AST) override;
-
-private:
-  std::unique_ptr<spdlog::logger> Logger;
+  void visit(FunctionDecl &) override;
+  void visit(FunctionDef &) override;
+  void visit(VariableDecl &) override;
+  void visit(UnaryOp &) override;
+  void visit(BinaryOp &) override;
+  void visit(IfCond &) override;
+  void visit(TernaryCond &) override;
+  void visit(IntegerLiteral &) override;
+  void visit(FloatLiteral &) override;
+  void visit(CharLiteral &) override;
+  void visit(StringLiteral &) override;
+  void visit(VariableRef &) override;
+  void visit(WhileLoop &) override;
+  void visit(ForLoop &) override;
+  void visit(MemberAccess &) override;
+  void visit(FunctionCall &) override;
+  void visit(Return &) override;
 };
 
 } // namespace fantac::ast

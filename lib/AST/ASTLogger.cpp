@@ -2,17 +2,20 @@
 
 #include "AST.h"
 
+#include <fmt/format.h>
+
 namespace fantac::ast {
 
-ASTLogger::ASTLogger(util::ILoggerFactory &LF)
-    : Logger(LF.createLogger("ASTLogger")) {}
+ASTLogger::ASTLogger() = default;
 
 void ASTLogger::visit(FunctionDecl &AST) {
-  Logger->info("FunctionDecl: {}.", AST);
+  static_cast<void>(AST);
+  // fmt::print("FunctionDecl: {}.", AST);
 }
 
 void ASTLogger::visit(FunctionDef &AST) {
-  Logger->info("FunctionDef: {}.", AST);
+  static_cast<void>(AST);
+  // fmt::print("FunctionDef: {}.", AST);
 
   for (const auto &Instruction : AST.Body) {
     if (Instruction) {
@@ -20,21 +23,23 @@ void ASTLogger::visit(FunctionDef &AST) {
     }
   }
 
-  Logger->info("FunctionDef: End.");
+  // fmt::print("FunctionDef: End.");
 }
 
 void ASTLogger::visit(VariableDecl &AST) {
-  Logger->info("VariableDecl: {}.", AST);
+  static_cast<void>(AST);
+  // fmt::print("VariableDecl: {}.", AST);
 
   if (AST.AssignmentExpr) {
     AST.AssignmentExpr->accept(*this);
   } else {
-    Logger->info("VariableDecl: No assignment.");
+    // fmt::print("VariableDecl: No assignment.");
   }
 }
 
 void ASTLogger::visit(UnaryOp &AST) {
-  Logger->info("UnaryOp: {}.", AST);
+  static_cast<void>(AST);
+  // fmt::print("UnaryOp: {}.", AST);
 
   if (AST.Expr) {
     AST.Expr->accept(*this);
@@ -42,7 +47,8 @@ void ASTLogger::visit(UnaryOp &AST) {
 }
 
 void ASTLogger::visit(BinaryOp &AST) {
-  Logger->info("BinaryOp: {}.", AST);
+  static_cast<void>(AST);
+  // fmt::print("BinaryOp: {}.", AST);
 
   if (AST.Left) {
     AST.Left->accept(*this);
@@ -54,13 +60,14 @@ void ASTLogger::visit(BinaryOp &AST) {
 }
 
 void ASTLogger::visit(IfCond &AST) {
-  Logger->info("IfCond: {}.");
+  static_cast<void>(AST);
+  // fmt::print("IfCond: {}.");
 
   if (AST.Condition) {
     AST.Condition->accept(*this);
   }
 
-  Logger->info("IfCond: Then.");
+  // fmt::print("IfCond: Then.");
 
   for (const auto &Instruction : AST.Then) {
     if (Instruction) {
@@ -68,7 +75,7 @@ void ASTLogger::visit(IfCond &AST) {
     }
   }
 
-  Logger->info("IfCond: Else.");
+  // fmt::print("IfCond: Else.");
 
   for (const auto &Instruction : AST.Else) {
     if (Instruction) {
@@ -76,53 +83,60 @@ void ASTLogger::visit(IfCond &AST) {
     }
   }
 
-  Logger->info("IfCond: End.");
+  // fmt::print("IfCond: End.");
 }
 
 void ASTLogger::visit(TernaryCond &AST) {
-  Logger->info("TernaryCond: {}.");
+  static_cast<void>(AST);
+  // fmt::print("TernaryCond: {}.");
 
   if (AST.Condition) {
     AST.Condition->accept(*this);
   }
 
-  Logger->info("TernaryCond: Then.");
+  // fmt::print("TernaryCond: Then.");
 
   if (AST.Then) {
     AST.Then->accept(*this);
   }
 
-  Logger->info("TernaryCond: Else.");
+  // fmt::print("TernaryCond: Else.");
 
   if (AST.Else) {
     AST.Else->accept(*this);
   }
 
-  Logger->info("TernaryCond: End.");
+  // fmt::print("TernaryCond: End.");
 }
 
 void ASTLogger::visit(IntegerLiteral &AST) {
-  Logger->info("IntegerLiteral: {}.", AST);
+  static_cast<void>(AST);
+  // fmt::print("IntegerLiteral: {}.", AST);
 }
 
 void ASTLogger::visit(FloatLiteral &AST) {
-  Logger->info("FloatLiteral: {}.", AST);
+  static_cast<void>(AST);
+  // fmt::print("FloatLiteral: {}.", AST);
 }
 
 void ASTLogger::visit(CharLiteral &AST) {
-  Logger->info("CharLiteral: {}.", AST);
+  static_cast<void>(AST);
+  // fmt::print("CharLiteral: {}.", AST);
 }
 
 void ASTLogger::visit(StringLiteral &AST) {
-  Logger->info("StringLiteral: {}.", AST);
+  static_cast<void>(AST);
+  // fmt::print("StringLiteral: {}.", AST);
 }
 
 void ASTLogger::visit(VariableRef &AST) {
-  Logger->info("VariableRef: {}.", AST);
+  static_cast<void>(AST);
+  // fmt::print("VariableRef: {}.", AST);
 }
 
 void ASTLogger::visit(WhileLoop &AST) {
-  Logger->info("WhileLoop: {}.");
+  static_cast<void>(AST);
+  // fmt::print("WhileLoop: {}.");
 
   if (AST.Condition) {
     AST.Condition->accept(*this);
@@ -134,11 +148,12 @@ void ASTLogger::visit(WhileLoop &AST) {
     }
   }
 
-  Logger->info("WhileLoop: End.");
+  // fmt::print("WhileLoop: End.");
 }
 
 void ASTLogger::visit(ForLoop &AST) {
-  Logger->info("ForLoop: {}.");
+  static_cast<void>(AST);
+  // fmt::print("ForLoop: {}.");
 
   if (AST.Init) {
     AST.Init->accept(*this);
@@ -156,11 +171,12 @@ void ASTLogger::visit(ForLoop &AST) {
     Instruction->accept(*this);
   }
 
-  Logger->info("ForLoop: End.");
+  // fmt::print("ForLoop: End.");
 }
 
 void ASTLogger::visit(MemberAccess &AST) {
-  Logger->info("MemberAccess: {}.", AST);
+  static_cast<void>(AST);
+  // fmt::print("MemberAccess: {}.", AST);
 
   if (AST.Expr) {
     AST.Expr->accept(*this);
@@ -168,17 +184,19 @@ void ASTLogger::visit(MemberAccess &AST) {
 }
 
 void ASTLogger::visit(FunctionCall &AST) {
-  Logger->info("FunctionCall: {}.", AST);
+  static_cast<void>(AST);
+  // fmt::print("FunctionCall: {}.", AST);
 
   for (auto &Arg : AST.Args) {
     Arg->accept(*this);
   }
 
-  Logger->info("FunctionCall: End.");
+  // fmt::print("FunctionCall: End.");
 }
 
 void ASTLogger::visit(Return &AST) {
-  Logger->info("Return: {}.");
+  static_cast<void>(AST);
+  // fmt::print("Return: {}.");
 
   if (AST.Expr) {
     AST.Expr->accept(*this);

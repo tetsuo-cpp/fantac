@@ -2,13 +2,12 @@
 
 #include <AST/AST.h>
 
+#include <fmt/format.h>
 #include <llvm/IR/Verifier.h>
 
 namespace fantac::codegen {
 
-IRGenerator::IRGenerator(util::ILoggerFactory &LF)
-    : Builder(Context), Module("FantaC", Context),
-      Logger(LF.createLogger("IRGenerator")) {}
+IRGenerator::IRGenerator() : Builder(Context), Module("FantaC", Context) {}
 
 IRGenerator::~IRGenerator() { Module.print(llvm::errs(), nullptr); }
 
@@ -51,8 +50,6 @@ template <typename T> void IRGenerator::visitAndAssign(T &AST) {
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::FunctionDecl &AST) {
-  Logger->info("Generating IR for FunctionDecl.");
-
   std::vector<llvm::Type *> ArgTypes;
   for (const auto &Arg : AST.Args) {
     ArgTypes.push_back(cTypeToLLVMType(Arg.second));
@@ -74,8 +71,6 @@ llvm::Value *IRGenerator::visitImpl(ast::FunctionDecl &AST) {
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::FunctionDef &AST) {
-  Logger->info("Generating IR for FunctionDef.");
-
   const auto &Name = AST.Decl->Name;
 
   auto Iter = Functions.find(Name);
@@ -106,8 +101,6 @@ llvm::Value *IRGenerator::visitImpl(ast::FunctionDef &AST) {
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::VariableDecl &AST) {
-  Logger->info("Generating IR for VariableDecl.");
-
   auto *F = Builder.GetInsertBlock()->getParent();
 
   llvm::Type *VariableType = cTypeToLLVMType(AST.Type);
@@ -132,8 +125,6 @@ llvm::Value *IRGenerator::visitImpl(ast::UnaryOp &AST) {
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::BinaryOp &AST) {
-  Logger->info("Generating IR for BinaryOp.");
-
   // Evaluate from left to right.
   AST.Left->accept(*this);
   AST.Right->accept(*this);
@@ -153,13 +144,11 @@ llvm::Value *IRGenerator::visitImpl(ast::BinaryOp &AST) {
     return add(AST.Left->LLVMValue, AST.Right->LLVMValue);
   default:
     throw CodeGenException(
-        fmt::format("Invalid binary operator {}.", AST.Operator));
+        fmt::format("Invalid binary operator.", AST.Operator));
   }
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::IfCond &AST) {
-  Logger->info("Generating IR for IfCond.");
-
   AST.Condition->accept(*this);
   auto *CondV = AST.Condition->LLVMValue;
   if (!CondV) {
@@ -196,8 +185,6 @@ llvm::Value *IRGenerator::visitImpl(ast::IfCond &AST) {
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::TernaryCond &AST) {
-  Logger->info("Generating IR for TernaryCond.");
-
   AST.Condition->accept(*this);
   auto *CondV = AST.Condition->LLVMValue;
   if (!CondV) {
@@ -235,32 +222,22 @@ llvm::Value *IRGenerator::visitImpl(ast::TernaryCond &AST) {
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::IntegerLiteral &AST) {
-  Logger->info("Generating IR for IntegerLiteral.");
-
   return llvm::ConstantInt::get(Context, llvm::APInt(32, AST.Value));
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::FloatLiteral &AST) {
-  Logger->info("Generating IR for FloatLiteral.");
-
   return llvm::ConstantFP::get(Builder.getFloatTy(), AST.Value);
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::CharLiteral &AST) {
-  Logger->info("Generating IR for CharLiteral.");
-
   return llvm::ConstantInt::get(Builder.getInt8Ty(), AST.Value);
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::StringLiteral &AST) {
-  Logger->info("Generating IR for StringLiteral.");
-
   return Builder.CreateGlobalStringPtr(AST.Value);
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::VariableRef &AST) {
-  Logger->info("Generating IR for VariableRef.");
-
   const auto VarIter = NamedVariables.find(AST.Name);
   if (VarIter == NamedVariables.end()) {
     throw CodeGenException(
@@ -271,8 +248,6 @@ llvm::Value *IRGenerator::visitImpl(ast::VariableRef &AST) {
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::WhileLoop &AST) {
-  Logger->info("Generating IR for WhileLoop.");
-
   llvm::Function *F = Builder.GetInsertBlock()->getParent();
 
   AST.Condition->accept(*this);
@@ -310,8 +285,6 @@ llvm::Value *IRGenerator::visitImpl(ast::MemberAccess &AST) {
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::FunctionCall &AST) {
-  Logger->info("Generating IR for FunctionCall.");
-
   const auto FunctionIter = Functions.find(AST.Name);
   if (FunctionIter == Functions.end()) {
     throw CodeGenException(fmt::format(
@@ -335,8 +308,6 @@ llvm::Value *IRGenerator::visitImpl(ast::FunctionCall &AST) {
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::Return &AST) {
-  Logger->info("Generating IR for Return.");
-
   if (AST.Expr) {
     AST.Expr->accept(*this);
     Builder.CreateRet(AST.Expr->LLVMValue);

@@ -15,10 +15,10 @@ add_definitions(${LLVM_DEFINITIONS})
 set(LLVM_LINK_LLVM_DYLIB ON)
 set(llvm_libs LLVM)
 
-# Setup spdlog.
+# Setup fmt.
 add_subdirectory(
-  "${PROJECT_SOURCE_DIR}/external/spdlog"
-  "external/spdlog"
+  "${PROJECT_SOURCE_DIR}/external/fmt"
+  "external/fmt"
   )
 
 # Build compiler binary.
@@ -35,6 +35,5 @@ set(
 
 add_executable(fantac ${FANTAC_FILES})
 
-target_link_libraries(fantac ${llvm_libs})
-target_link_libraries(fantac spdlog)
+target_link_libraries(fantac ${llvm_libs} fmt)
 target_include_directories(fantac PRIVATE lib)

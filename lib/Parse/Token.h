@@ -1,5 +1,7 @@
 #pragma once
 
+#include <fmt/format.h>
+
 #include <string>
 
 namespace fantac::parse {
@@ -103,8 +105,19 @@ struct Token {
 
 std::string tokenKindToString(TokenKind Kind);
 
-template <typename T> T &operator<<(T &Stream, TokenKind Kind) {
-  return Stream << tokenKindToString(Kind);
-}
-
 } // namespace fantac::parse
+
+namespace fmt {
+
+template <> struct formatter<fantac::parse::TokenKind> {
+  template <typename ParseContext> constexpr auto parse(ParseContext &Ctx) {
+    return Ctx.begin();
+  }
+
+  template <typename FormatContext>
+  auto format(const fantac::parse::TokenKind &T, FormatContext &Ctx) {
+    return format_to(Ctx.begin(), "{}", fantac::parse::tokenKindToString(T));
+  }
+};
+
+} // namespace fmt
