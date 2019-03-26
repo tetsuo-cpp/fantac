@@ -29,7 +29,7 @@ void FantaC::run(const std::string &FileName) {
     // Parse into AST and generate LLVM IR.
     while (auto AST = Parser->parseTopLevelExpr()) {
 #ifndef NDEBUG
-      fmt::print("{};\n", AST->toString());
+      fmt::print("{};\n\n", AST->toString());
 #endif
       for (auto &ASTVisitor : ASTVisitors) {
         AST->accept(*ASTVisitor);

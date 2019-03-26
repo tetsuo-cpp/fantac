@@ -69,7 +69,7 @@ inline std::string cTypeToString(const CType &Type) {
   return fmt::format("{}{}{}{}", Type.Signed ? "" : "unsigned ",
                      cLengthKindToString(Type.Length),
                      cTypeKindToString(Type.Type),
-                     std::string('*', Type.Pointer));
+                     std::string(Type.Pointer, '*'));
 }
 
 struct FunctionDecl : public IAST {
@@ -217,8 +217,8 @@ struct TernaryCond : public IAST {
   void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
   std::string toString() const override {
-    return fmt::format("() ? () : ()", Condition->toString(), Then->toString(),
-                       Else->toString());
+    return fmt::format("({}) ? ({}) : ({})", Condition->toString(),
+                       Then->toString(), Else->toString());
   }
 
   const ASTPtr Condition, Then, Else;
