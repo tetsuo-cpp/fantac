@@ -42,81 +42,81 @@ std::string tokenKindToString(TokenKind Kind) {
   case TokenKind::TK_CloseParen:
     return "CloseParen";
   case TokenKind::TK_Comma:
-    return "Comma";
+    return ",";
   case TokenKind::TK_Semicolon:
     return "Semicolon";
   case TokenKind::TK_Colon:
     return "Colon";
   case TokenKind::TK_Question:
-    return "Question";
+    return "?";
   case TokenKind::TK_Add:
-    return "Add";
+    return "+";
   case TokenKind::TK_AddEq:
-    return "AddEq";
+    return "+=";
   case TokenKind::TK_Subtract:
-    return "Subtract";
+    return "-";
   case TokenKind::TK_SubtractEq:
-    return "SubtractEq";
+    return "-=";
   case TokenKind::TK_Multiply:
-    return "Multiply";
+    return "*";
   case TokenKind::TK_MultiplyEq:
-    return "MultiplyEq";
+    return "*=";
   case TokenKind::TK_Divide:
-    return "Divide";
+    return "/";
   case TokenKind::TK_DivideEq:
-    return "DivideEq";
+    return "/=";
   case TokenKind::TK_Modulus:
-    return "Modulus";
+    return "%";
   case TokenKind::TK_ModulusEq:
-    return "ModulusEq";
+    return "%=";
   case TokenKind::TK_Assign:
-    return "Assign";
+    return "=";
   case TokenKind::TK_LessThan:
-    return "LessThan";
+    return "<";
   case TokenKind::TK_LessThanEq:
-    return "LessThanEq";
+    return "<=";
   case TokenKind::TK_GreaterThan:
-    return "GreaterThan";
+    return ">";
   case TokenKind::TK_GreaterThanEq:
-    return "GreaterThanEq";
+    return ">=";
   case TokenKind::TK_Equals:
-    return "Equals";
+    return "==";
   case TokenKind::TK_NotEquals:
-    return "NotEquals";
+    return "!=";
   case TokenKind::TK_ShiftLeft:
-    return "ShiftLeft";
+    return "<<";
   case TokenKind::TK_ShiftLeftEq:
-    return "ShiftLeftEq";
+    return "<<=";
   case TokenKind::TK_ShiftRight:
-    return "ShiftRight";
+    return ">>";
   case TokenKind::TK_ShiftRightEq:
-    return "ShiftRightEq";
+    return ">>=";
   case TokenKind::TK_And:
-    return "And";
+    return "&";
   case TokenKind::TK_AndEq:
-    return "AndEq";
+    return "&=";
   case TokenKind::TK_Or:
-    return "Or";
+    return "|";
   case TokenKind::TK_OrEq:
-    return "OrEq";
+    return "|=";
   case TokenKind::TK_Xor:
-    return "Xor";
+    return "^";
   case TokenKind::TK_XorEq:
-    return "XorEq";
+    return "^=";
   case TokenKind::TK_LogicalAnd:
-    return "LogicalAnd";
+    return "&&";
   case TokenKind::TK_LogicalOr:
-    return "LogicalOr";
+    return "||";
   case TokenKind::TK_Not:
-    return "Not";
+    return "!";
   case TokenKind::TK_Period:
-    return "Period";
+    return ".";
   case TokenKind::TK_Arrow:
-    return "Arrow";
+    return "->";
   case TokenKind::TK_Increment:
-    return "Increment";
+    return "++";
   case TokenKind::TK_Decrement:
-    return "Decrement";
+    return "--";
   case TokenKind::TK_OpenSquareBracket:
     return "OpenSquareBracket";
   case TokenKind::TK_CloseSquareBracket:

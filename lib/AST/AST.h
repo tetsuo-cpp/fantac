@@ -116,7 +116,7 @@ struct FunctionDef : public IAST {
     for (const auto &B : Body)
       BodyString.append(fmt::format("{};\n", B->toString()));
 
-    return fmt::format("{} {{\n{}}}", Decl->toString(), BodyString);
+    return fmt::format("{}\n{{\n{}}}", Decl->toString(), BodyString);
   }
 
   const std::unique_ptr<FunctionDecl> Decl;
@@ -195,13 +195,13 @@ struct IfCond : public IAST {
     if (!Else.empty()) {
       std::string ElseString;
       for (const auto &E : Else)
-        ElseString.append(fmt::format("{}\n", E->toString()));
+        ElseString.append(fmt::format("{};\n", E->toString()));
 
-      return fmt::format("if ({}) {{\n{}}} else {{\n{}}}",
+      return fmt::format("if ({})\n{{\n{}}}\nelse\n{{\n{}}}",
                          Condition->toString(), ThenString, ElseString);
     }
 
-    return fmt::format("if ({}) {{\n{}}}", Condition->toString(), ThenString);
+    return fmt::format("if ({})\n{{\n{}}}", Condition->toString(), ThenString);
   }
 
   const ASTPtr Condition;
@@ -236,7 +236,7 @@ struct WhileLoop : public IAST {
     for (const auto &B : Body)
       BodyString.append(fmt::format("{};\n", B->toString()));
 
-    return fmt::format("while ({}) {{\n{}}}", Condition->toString(),
+    return fmt::format("while ({})\n{{\n{}}}", Condition->toString(),
                        BodyString);
   }
 

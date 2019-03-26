@@ -39,13 +39,11 @@ bool Parser::consumeToken(TokenKind Kind) {
 
 void Parser::expectToken(TokenKind Kind) {
   if (!consumeToken(Kind)) {
-    /*
-throw ParseException(fmt::format("Encountered unexpected token. Expected "
-                               "kind {} but found kind {} with value {}.",
-                               Kind, CurrentToken.Kind,
-                               CurrentToken.Value));
-    */
-    throw ParseException("");
+    throw ParseException(fmt::format("Encountered unexpected token. Expected "
+                                     "kind {} but found kind {} with value {}.",
+                                     tokenKindToString(Kind),
+                                     tokenKindToString(CurrentToken.Kind),
+                                     CurrentToken.Value));
   }
 }
 
