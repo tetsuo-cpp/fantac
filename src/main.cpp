@@ -9,7 +9,6 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  fantac::FantaC Compiler;
-  Compiler.run(argv[1]);
+  fantac::run(argv[1]);
   return 0;
 }

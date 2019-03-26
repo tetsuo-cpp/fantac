@@ -10,30 +10,25 @@
 
 namespace fantac {
 
-FantaC::FantaC() = default;
-
-void FantaC::run(const std::string &FileName) {
-  // Setup the visitors we want.
-  ASTVisitors.push_back(std::make_unique<codegen::IRGenerator>());
-
+void run(const std::string &FileName) {
   std::ifstream File(FileName);
   std::string Source((std::istreambuf_iterator<char>(File)),
                      std::istreambuf_iterator<char>());
 
-  try {
-    // Construct parsing components.
-    Lexer =
-        std::make_unique<parse::Lexer>(&*Source.begin(), &*(Source.end() - 1));
-    Parser = std::make_unique<parse::Parser>(*Lexer);
+  // Construct parsing components.
+  parse::Lexer L(&*Source.begin(), &*(Source.end() - 1));
+  parse::Parser P(L);
 
+  // Construct LLVM code generator.
+  codegen::IRGenerator IR;
+
+  try {
     // Parse into AST and generate LLVM IR.
-    while (auto AST = Parser->parseTopLevelExpr()) {
+    while (auto AST = P.parseTopLevelExpr()) {
 #ifndef NDEBUG
       fmt::print("{};\n\n", AST->toString());
 #endif
-      for (auto &ASTVisitor : ASTVisitors) {
-        AST->accept(*ASTVisitor);
-      }
+      AST->accept(IR);
     }
   } catch (const parse::ParseException &Error) {
     fmt::print("Caught ParseException: \"{}\". Terminating compilation.",
