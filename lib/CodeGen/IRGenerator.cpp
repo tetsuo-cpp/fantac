@@ -347,6 +347,8 @@ llvm::Type *IRGenerator::cTypeToLLVMType(ast::CType X) {
         return Builder.getInt64Ty();
       }
     }
+
+    return nullptr;
   }();
 
   for (unsigned int Index = 0; Index < X.Pointer; ++Index) {
