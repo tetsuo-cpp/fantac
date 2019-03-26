@@ -143,8 +143,8 @@ llvm::Value *IRGenerator::visitImpl(ast::BinaryOp &AST) {
   case parse::TokenKind::TK_Add:
     return add(AST.Left->LLVMValue, AST.Right->LLVMValue);
   default:
-    throw CodeGenException(
-        fmt::format("Invalid binary operator.", AST.Operator));
+    throw CodeGenException(fmt::format("Invalid binary operator {}.",
+                                       parse::tokenKindToString(AST.Operator)));
   }
 }
 

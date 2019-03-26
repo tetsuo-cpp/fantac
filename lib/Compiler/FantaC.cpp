@@ -1,6 +1,5 @@
 #include "FantaC.h"
 
-#include <AST/ASTLogger.h>
 #include <CodeGen/IRGenerator.h>
 #include <Parse/Lexer.h>
 #include <Parse/Parser.h>
@@ -15,9 +14,6 @@ FantaC::FantaC() = default;
 
 void FantaC::run(const std::string &FileName) {
   // Setup the visitors we want.
-#ifndef NDEBUG
-  ASTVisitors.push_back(std::make_unique<ast::ASTLogger>());
-#endif
   ASTVisitors.push_back(std::make_unique<codegen::IRGenerator>());
 
   std::ifstream File(FileName);
@@ -32,6 +28,9 @@ void FantaC::run(const std::string &FileName) {
 
     // Parse into AST and generate LLVM IR.
     while (auto AST = Parser->parseTopLevelExpr()) {
+#ifndef NDEBUG
+      fmt::print("{};\n", AST->toString());
+#endif
       for (auto &ASTVisitor : ASTVisitors) {
         AST->accept(*ASTVisitor);
       }

@@ -106,18 +106,3 @@ struct Token {
 std::string tokenKindToString(TokenKind Kind);
 
 } // namespace fantac::parse
-
-namespace fmt {
-
-template <> struct formatter<fantac::parse::TokenKind> {
-  template <typename ParseContext> constexpr auto parse(ParseContext &Ctx) {
-    return Ctx.begin();
-  }
-
-  template <typename FormatContext>
-  auto format(const fantac::parse::TokenKind &T, FormatContext &Ctx) {
-    return format_to(Ctx.begin(), "{}", fantac::parse::tokenKindToString(T));
-  }
-};
-
-} // namespace fmt

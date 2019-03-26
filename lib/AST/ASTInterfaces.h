@@ -1,5 +1,7 @@
 #pragma once
 
+#include <fmt/format.h>
+
 #include <memory>
 
 namespace llvm {
@@ -58,6 +60,7 @@ struct IAST {
   virtual ~IAST() = default;
 
   virtual void accept(IASTVisitor &) = 0;
+  virtual std::string toString() const = 0;
 
   llvm::Value *LLVMValue = nullptr;
 };

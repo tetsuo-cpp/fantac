@@ -24,7 +24,6 @@ add_subdirectory(
 # Build compiler binary.
 set(
   FANTAC_FILES
-  lib/AST/ASTLogger.cpp
   lib/CodeGen/IRGenerator.cpp
   lib/Compiler/FantaC.cpp
   lib/Parse/Lexer.cpp

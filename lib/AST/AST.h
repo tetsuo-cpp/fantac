@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Parse/Token.h>
-
 #include "ASTInterfaces.h"
+
+#include <Parse/Token.h>
 
 #include <vector>
 
@@ -27,53 +27,50 @@ struct CType {
   CType(CTypeKind Type, CLengthKind Length, bool Signed, unsigned int Pointer)
       : Type(Type), Length(Length), Signed(Signed), Pointer(Pointer) {}
 
-  template <typename T> friend T &operator<<(T &Stream, const CType &X) {
-    Stream << "{Type=";
-    switch (X.Type) {
-    case CTypeKind::CTK_Char:
-      Stream << "Char";
-      break;
-    case CTypeKind::CTK_Int:
-      Stream << "Int";
-      break;
-    case CTypeKind::CTK_Float:
-      Stream << "Float";
-      break;
-    case CTypeKind::CTK_Double:
-      Stream << "Double";
-      break;
-    case CTypeKind::CTK_Void:
-      Stream << "Void";
-      break;
-    }
-
-    Stream << ", Length=";
-    switch (X.Length) {
-    case CLengthKind::CLK_Short:
-      Stream << "Short";
-      break;
-    case CLengthKind::CLK_Default:
-      Stream << "Default";
-      break;
-    case CLengthKind::CLK_Long:
-      Stream << "Long";
-      break;
-    case CLengthKind::CLK_LongLong:
-      Stream << "LongLong";
-      break;
-    }
-
-    Stream << ", Signed=" << X.Signed;
-    Stream << ", Pointer=" << X.Pointer;
-    Stream << "}";
-    return Stream;
-  }
-
   const CTypeKind Type;
   const CLengthKind Length;
   const bool Signed;
   const unsigned int Pointer;
 };
+
+inline const char *cTypeKindToString(CTypeKind Kind) {
+  switch (Kind) {
+  case CTypeKind::CTK_Int:
+    return "int";
+  case CTypeKind::CTK_Float:
+    return "float";
+  case CTypeKind::CTK_Double:
+    return "double";
+  case CTypeKind::CTK_Char:
+    return "char";
+  case CTypeKind::CTK_Void:
+    return "void";
+  }
+
+  return "UNKNOWN";
+}
+
+inline const char *cLengthKindToString(CLengthKind Kind) {
+  switch (Kind) {
+  case CLengthKind::CLK_Short:
+    return "short ";
+  case CLengthKind::CLK_Long:
+    return "long ";
+  case CLengthKind::CLK_LongLong:
+    return "long long ";
+  case CLengthKind::CLK_Default:
+    return "";
+  }
+
+  return "UNKNOWN ";
+}
+
+inline std::string cTypeToString(const CType &Type) {
+  return fmt::format("{}{}{}{}", Type.Signed ? "" : "unsigned ",
+                     cLengthKindToString(Type.Length),
+                     cTypeKindToString(Type.Type),
+                     std::string('*', Type.Pointer));
+}
 
 struct FunctionDecl : public IAST {
   template <typename T0, typename T1>
@@ -84,17 +81,16 @@ struct FunctionDecl : public IAST {
   // IAST impl.
   void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
-  template <typename T> friend T &operator<<(T &Stream, const FunctionDecl &F) {
-    Stream << "{Name=" << F.Name << ", Return=" << F.Return << ", Args=(";
-    for (const auto &Arg : F.Args) {
-      Stream << "{Name=" << Arg.first << ", Type=" << Arg.second << "}";
-      if (&Arg != &F.Args.back()) {
-        Stream << ", ";
-      }
+  std::string toString() const override {
+    std::string ArgString;
+    for (const auto &Arg : Args) {
+      ArgString.append(
+          fmt::format("{} {}", cTypeToString(Arg.second), Arg.first));
+      if (&Arg != &Args.back())
+        ArgString.append(", ");
     }
 
-    Stream << ")}";
-    return Stream;
+    return fmt::format("{} {}({})", cTypeToString(Return), Name, ArgString);
   }
 
   const std::string Name;
@@ -115,9 +111,12 @@ struct FunctionDef : public IAST {
   // IAST impl.
   void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
-  template <typename T> friend T &operator<<(T &Stream, const FunctionDef &F) {
-    Stream << "{Decl=" << *F.Decl << "}";
-    return Stream;
+  std::string toString() const override {
+    std::string BodyString;
+    for (const auto &B : Body)
+      BodyString.append(fmt::format("{};\n", B->toString()));
+
+    return fmt::format("{} {{\n{}}}", Decl->toString(), BodyString);
   }
 
   const std::unique_ptr<FunctionDecl> Decl;
@@ -133,9 +132,13 @@ struct VariableDecl : public IAST {
   // IAST impl.
   void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
-  template <typename T> friend T &operator<<(T &Stream, const VariableDecl &V) {
-    Stream << "{Name=" << V.Name << ", Type=" << V.Type << "}";
-    return Stream;
+  std::string toString() const override {
+    if (AssignmentExpr) {
+      return fmt::format("{} {} = {}", cTypeToString(Type), Name,
+                         AssignmentExpr->toString());
+    }
+
+    return fmt::format("{} {}", cTypeToString(Type), Name);
   }
 
   const CType Type;
@@ -150,9 +153,9 @@ struct UnaryOp : public IAST {
   // IAST impl.
   void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
-  template <typename T> friend T &operator<<(T &Stream, const UnaryOp &U) {
-    Stream << "{Operator=" << parse::tokenKindToString(U.Operator) << "}";
-    return Stream;
+  std::string toString() const override {
+    return fmt::format("{}({})", parse::tokenKindToString(Operator),
+                       Expr->toString());
   }
 
   const parse::TokenKind Operator;
@@ -166,9 +169,9 @@ struct BinaryOp : public IAST {
   // IAST impl.
   void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
-  template <typename T> friend T &operator<<(T &Stream, const BinaryOp &B) {
-    Stream << "{Operator=" << parse::tokenKindToString(B.Operator) << "}";
-    return Stream;
+  std::string toString() const override {
+    return fmt::format("({}) {} ({})", Left->toString(),
+                       parse::tokenKindToString(Operator), Right->toString());
   }
 
   const parse::TokenKind Operator;
@@ -184,6 +187,23 @@ struct IfCond : public IAST {
   // IAST impl.
   void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); };
 
+  std::string toString() const override {
+    std::string ThenString;
+    for (const auto &T : Then)
+      ThenString.append(fmt::format("{};\n", T->toString()));
+
+    if (!Else.empty()) {
+      std::string ElseString;
+      for (const auto &E : Else)
+        ElseString.append(fmt::format("{}\n", E->toString()));
+
+      return fmt::format("if ({}) {{\n{}}} else {{\n{}}}",
+                         Condition->toString(), ThenString, ElseString);
+    }
+
+    return fmt::format("if ({}) {{\n{}}}", Condition->toString(), ThenString);
+  }
+
   const ASTPtr Condition;
   const std::vector<ASTPtr> Then, Else;
 };
@@ -196,6 +216,11 @@ struct TernaryCond : public IAST {
   // IAST impl.
   void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
+  std::string toString() const override {
+    return fmt::format("() ? () : ()", Condition->toString(), Then->toString(),
+                       Else->toString());
+  }
+
   const ASTPtr Condition, Then, Else;
 };
 
@@ -205,6 +230,15 @@ struct WhileLoop : public IAST {
 
   // IAST impl.
   void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+
+  std::string toString() const override {
+    std::string BodyString;
+    for (const auto &B : Body)
+      BodyString.append(fmt::format("{};\n", B->toString()));
+
+    return fmt::format("while ({}) {{\n{}}}", Condition->toString(),
+                       BodyString);
+  }
 
   const ASTPtr Condition;
   const std::vector<ASTPtr> Body;
@@ -219,6 +253,16 @@ struct ForLoop : public IAST {
   // IAST impl.
   void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
+  std::string toString() const override {
+    std::string BodyString;
+    for (const auto &B : Body)
+      BodyString.append(fmt::format("{};\n", B->toString()));
+
+    return fmt::format("for (({});({});({})) {\n{}}", Init->toString(),
+                       Condition->toString(), Iteration->toString(),
+                       BodyString);
+  }
+
   const ASTPtr Init, Condition, Iteration;
   const std::vector<ASTPtr> Body;
 };
@@ -228,12 +272,7 @@ struct IntegerLiteral : public IAST {
 
   // IAST impl.
   void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
-
-  template <typename T>
-  friend T &operator<<(T &Stream, const IntegerLiteral &I) {
-    Stream << "{Value=" << I.Value << "}";
-    return Stream;
-  }
+  std::string toString() const override { return fmt::format("{}", Value); }
 
   const unsigned int Value;
 };
@@ -243,11 +282,7 @@ struct FloatLiteral : public IAST {
 
   // IAST impl.
   void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
-
-  template <typename T> friend T &operator<<(T &Stream, const FloatLiteral &F) {
-    Stream << "{Value=" << F.Value << "}";
-    return Stream;
-  }
+  std::string toString() const override { return fmt::format("{}", Value); }
 
   const double Value;
 };
@@ -257,11 +292,7 @@ struct CharLiteral : public IAST {
 
   // IAST impl.
   void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
-
-  template <typename T> friend T &operator<<(T &Stream, const CharLiteral &C) {
-    Stream << "{Value=" << C.Value << "}";
-    return Stream;
-  }
+  std::string toString() const override { return fmt::format("\'{}\'", Value); }
 
   const char Value;
 };
@@ -272,12 +303,7 @@ struct StringLiteral : public IAST {
 
   // IAST impl.
   void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
-
-  template <typename T>
-  friend T &operator<<(T &Stream, const StringLiteral &S) {
-    Stream << "{Value=" << S.Value << "}";
-    return Stream;
-  }
+  std::string toString() const override { return fmt::format("\"{}\"", Value); }
 
   const std::string Value;
 };
@@ -288,11 +314,7 @@ struct VariableRef : public IAST {
 
   // IAST impl.
   void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
-
-  template <typename T> friend T &operator<<(T &Stream, const VariableRef &V) {
-    Stream << "{Name=" << V.Name << "}";
-    return Stream;
-  }
+  std::string toString() const override { return Name; }
 
   const std::string Name;
 };
@@ -305,9 +327,8 @@ struct MemberAccess : public IAST {
   // IAST impl.
   void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
-  template <typename T> friend T &operator<<(T &Stream, const MemberAccess &M) {
-    Stream << "{MemberName=" << M.MemberName << "}";
-    return Stream;
+  std::string toString() const override {
+    return fmt::format("{}.{}", Expr->toString(), MemberName);
   }
 
   const ASTPtr Expr;
@@ -322,9 +343,15 @@ struct FunctionCall : public IAST {
   // IAST impl.
   void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
 
-  template <typename T> friend T &operator<<(T &Stream, const FunctionCall &F) {
-    Stream << "{Name=" << F.Name << "}";
-    return Stream;
+  std::string toString() const override {
+    std::string ArgString;
+    for (const auto &Arg : Args) {
+      ArgString.append(Arg->toString());
+      if (Arg.get() != Args.back().get())
+        ArgString.append(", ");
+    }
+
+    return fmt::format("{}({})", Name, ArgString);
   }
 
   const std::string Name;
@@ -336,6 +363,10 @@ struct Return : public IAST {
 
   // IAST impl.
   void accept(IASTVisitor &Visitor) override { Visitor.visit(*this); }
+
+  std::string toString() const override {
+    return fmt::format("return {}", Expr->toString());
+  }
 
   const ASTPtr Expr;
 };
