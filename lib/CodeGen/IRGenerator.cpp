@@ -7,7 +7,8 @@
 
 namespace fantac::codegen {
 
-IRGenerator::IRGenerator() : Builder(Context), Module("FantaC", Context) {}
+IRGenerator::IRGenerator()
+    : Builder(Context), Module("FantaC", Context), LoadVariables(true) {}
 
 IRGenerator::~IRGenerator() { Module.print(llvm::errs(), nullptr); }
 
@@ -125,8 +126,15 @@ llvm::Value *IRGenerator::visitImpl(ast::UnaryOp &AST) {
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::BinaryOp &AST) {
+  // Most evil hack ever. I need to LoadStore unless the variable is on the left
+  // hand side of an assignment. I need to figure out a reasonable way to do
+  // this at some point.
+  if (AST.Operator == parse::TokenKind::TK_Assign)
+    LoadVariables = false;
+
   // Evaluate from left to right.
   AST.Left->accept(*this);
+  LoadVariables = true;
   AST.Right->accept(*this);
 
   switch (AST.Operator) {
@@ -239,37 +247,36 @@ llvm::Value *IRGenerator::visitImpl(ast::StringLiteral &AST) {
 
 llvm::Value *IRGenerator::visitImpl(ast::VariableRef &AST) {
   const auto VarIter = NamedVariables.find(AST.Name);
-  if (VarIter == NamedVariables.end()) {
+  if (VarIter == NamedVariables.end())
     throw CodeGenException(
         fmt::format("Reference to non-existent variable name: {}.", AST.Name));
-  }
 
-  return Builder.CreateLoad(VarIter->second, AST.Name);
+  if (LoadVariables)
+    return Builder.CreateLoad(VarIter->second, AST.Name);
+
+  return VarIter->second;
 }
 
 llvm::Value *IRGenerator::visitImpl(ast::WhileLoop &AST) {
   llvm::Function *F = Builder.GetInsertBlock()->getParent();
 
-  AST.Condition->accept(*this);
-  llvm::Value *CondV = AST.Condition->LLVMValue;
-  if (!CondV) {
-    throw CodeGenException("Condition in while loop evaluates to void.");
-  }
-
   llvm::BasicBlock *LoopBB = llvm::BasicBlock::Create(Context, "loop", F);
   llvm::BasicBlock *AfterLoopBB =
       llvm::BasicBlock::Create(Context, "afterloop", F);
 
-  Builder.CreateCondBr(CondV, LoopBB, AfterLoopBB);
-  F->getBasicBlockList().push_back(LoopBB);
+  Builder.CreateBr(LoopBB);
   Builder.SetInsertPoint(LoopBB);
 
   for (const auto &Instruction : AST.Body) {
     Instruction->accept(*this);
   }
 
+  AST.Condition->accept(*this);
+  llvm::Value *CondV = AST.Condition->LLVMValue;
+  if (!CondV)
+    throw CodeGenException("Condition in while loop evaluates to void.");
+
   Builder.CreateCondBr(CondV, LoopBB, AfterLoopBB);
-  F->getBasicBlockList().push_back(AfterLoopBB);
   Builder.SetInsertPoint(AfterLoopBB);
   return nullptr;
 }

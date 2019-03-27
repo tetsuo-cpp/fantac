@@ -78,6 +78,7 @@ private:
   llvm::Module Module;
   std::map<std::string, llvm::AllocaInst *> NamedVariables;
   std::map<std::string, llvm::Function *> Functions;
+  bool LoadVariables;
 };
 
 } // namespace fantac::codegen

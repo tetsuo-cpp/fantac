@@ -3,7 +3,6 @@ project(fantac)
 
 # Compiler flags.
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror")
 
 # Setup LLVM.
@@ -36,3 +35,11 @@ add_executable(fantac ${FANTAC_FILES})
 
 target_link_libraries(fantac ${llvm_libs} fmt)
 target_include_directories(fantac PRIVATE lib)
+
+if (DEFINED SANITIZER_TYPE)
+  if (${SANITIZER_TYPE} STREQUAL "ASan")
+    target_link_libraries(fantac -fsanitize=address)
+  elseif (${SANITIZER_TYPE} STREQUAL "UBSan")
+    target_link_libraries(fantac -fsanitize=undefined)
+  endif()
+endif()

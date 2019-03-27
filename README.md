@@ -5,7 +5,7 @@ Unusable.
 ## Dependencies
 * CMake.
 * LLVM 5.
-* spdlog.
+* fmt.
 ## Build
 Bring in Git submodules.
 ```
@@ -20,7 +20,7 @@ make
 ## Usage
 You can generate LLVM IR for a C source file like so.
 ```
-./fantac [FILE] [LOGGING_LEVEL]
+./fantac [FILE]
 ```
 See ```build.sh``` for an example of how you can use this in conjunction with ```llc``` to compile to an executable.
 ## References
