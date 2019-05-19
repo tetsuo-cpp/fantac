@@ -7,7 +7,7 @@ echo "Compiling to object code."
 llc -filetype=obj -o test.o test.ll
 
 echo "Linking with test main."
-clang++ test_main.cpp test.o -o test
+clang test_main.c test.o -o test
 
 echo "Running test."
 ./test

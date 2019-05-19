@@ -69,6 +69,7 @@ private:
                                            const std::string &, llvm::Type *);
   llvm::Type *cTypeToLLVMType(ast::CType);
   llvm::Value *greaterThan(llvm::Value *, llvm::Value *);
+  llvm::Value *greaterThanEq(llvm::Value *, llvm::Value *);
   llvm::Value *equals(llvm::Value *, llvm::Value *);
   llvm::Value *assign(llvm::Value *, llvm::Value *);
   llvm::Value *add(llvm::Value *, llvm::Value *);

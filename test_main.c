@@ -1,23 +1,21 @@
 #include <stdio.h>
 
-extern "C" int putchari(int X) {
+int putchari(int X) {
   fputc((char)X, stdout);
   return 0;
 }
 
-extern "C" int printi(int X) {
+int printi(int X) {
   fprintf(stdout, "%d\n", X);
   return 0;
 }
 
-extern "C" float printfl(float X) {
+float printfl(float X) {
   fprintf(stdout, "%f\n", X);
   return 0.0;
 }
 
-extern "C" {
 float bar(float);
-}
 
 int main() {
   printf("Running Bar.\n");

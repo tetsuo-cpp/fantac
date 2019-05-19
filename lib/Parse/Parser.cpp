@@ -12,39 +12,35 @@ namespace fantac::parse {
 Parser::Parser(ILexer &Lexer) : Lexer(Lexer) { Lexer.lex(CurrentToken); }
 
 ast::ASTPtr Parser::parseTopLevelExpr() {
-  if (CurrentToken.Kind == TokenKind::TK_EOF) {
+  if (CurrentToken.Kind == TokenKind::TK_EOF)
     return nullptr;
-  }
 
   const auto Type = parseType();
   auto Name = CurrentToken.Value;
 
   // Function call.
   expectToken(TokenKind::TK_Identifier);
-  if (consumeToken(TokenKind::TK_OpenParen)) {
+  if (consumeToken(TokenKind::TK_OpenParen))
     return parseFunction(Type, std::move(Name));
-  }
 
   return nullptr;
 }
 
 bool Parser::consumeToken(TokenKind Kind) {
-  if (CurrentToken.Kind == TokenKind::TK_EOF || CurrentToken.Kind != Kind) {
+  if (CurrentToken.Kind == TokenKind::TK_EOF || CurrentToken.Kind != Kind)
     return false;
-  }
 
   Lexer.lex(CurrentToken);
   return true;
 }
 
 void Parser::expectToken(TokenKind Kind) {
-  if (!consumeToken(Kind)) {
+  if (!consumeToken(Kind))
     throw ParseException(fmt::format("Encountered unexpected token. Expected "
                                      "kind {} but found kind {} with value {}.",
                                      tokenKindToString(Kind),
                                      tokenKindToString(CurrentToken.Kind),
                                      CurrentToken.Value));
-  }
 }
 
 ast::ASTPtr Parser::parseFunction(ast::CType Return, std::string &&Name) {
@@ -52,9 +48,8 @@ ast::ASTPtr Parser::parseFunction(ast::CType Return, std::string &&Name) {
   std::vector<std::pair<std::string, ast::CType>> Args;
   while (!consumeToken(TokenKind::TK_CloseParen)) {
     // Skip commas between arguments.
-    if (!Args.empty()) {
+    if (!Args.empty())
       expectToken(TokenKind::TK_Comma);
-    }
 
     // Argument type.
     const auto ArgType = parseType();
@@ -68,37 +63,34 @@ ast::ASTPtr Parser::parseFunction(ast::CType Return, std::string &&Name) {
                                                   std::move(Args));
 
   // Function declaration.
-  if (consumeToken(TokenKind::TK_Semicolon)) {
+  if (consumeToken(TokenKind::TK_Semicolon))
     return Decl;
-  }
 
   expectToken(TokenKind::TK_OpenBrace);
 
   // Otherwise, function definition.
   std::vector<ast::ASTPtr> Body;
-  while (!consumeToken(TokenKind::TK_CloseBrace)) {
+  while (!consumeToken(TokenKind::TK_CloseBrace))
     Body.push_back(parseStatement());
-  }
 
   return std::make_unique<ast::FunctionDef>(std::move(Decl), std::move(Body));
 }
 
 ast::ASTPtr Parser::parseStatement() {
-  if (consumeToken(TokenKind::TK_If)) {
+  if (consumeToken(TokenKind::TK_If))
     // Conditional.
     return parseIfCond();
-  } else if (consumeToken(TokenKind::TK_For)) {
+  else if (consumeToken(TokenKind::TK_For))
     // For loop.
     return parseForLoop();
-  } else if (consumeToken(TokenKind::TK_While)) {
+  else if (consumeToken(TokenKind::TK_While))
     // While loop.
     return parseWhileLoop();
-  } else if (consumeToken(TokenKind::TK_Return)) {
+  else if (consumeToken(TokenKind::TK_Return)) {
     // Return statement.
-    if (consumeToken(TokenKind::TK_Semicolon)) {
+    if (consumeToken(TokenKind::TK_Semicolon))
       // Should be in a void function. Maybe check this?
       return std::make_unique<ast::Return>(nullptr);
-    }
 
     auto ReturnExpr = parseExpr();
     expectToken(TokenKind::TK_Semicolon);
@@ -150,22 +142,19 @@ ast::ASTPtr Parser::parseIfCond() {
   std::vector<ast::ASTPtr> Then, Else;
 
   if (consumeToken(TokenKind::TK_OpenBrace)) {
-    while (!consumeToken(TokenKind::TK_CloseBrace)) {
+    while (!consumeToken(TokenKind::TK_CloseBrace))
       Then.push_back(parseStatement());
-    }
 
     if (consumeToken(TokenKind::TK_Else)) {
       expectToken(TokenKind::TK_OpenBrace);
-      while (!consumeToken(TokenKind::TK_CloseBrace)) {
+      while (!consumeToken(TokenKind::TK_CloseBrace))
         Else.push_back(parseStatement());
-      }
     }
   } else {
     // Braceless conditional.
     Then.push_back(parseStatement());
-    if (consumeToken(TokenKind::TK_Else)) {
+    if (consumeToken(TokenKind::TK_Else))
       Else.push_back(parseStatement());
-    }
   }
 
   return std::make_unique<ast::IfCond>(std::move(Cond), std::move(Then),
@@ -179,14 +168,12 @@ ast::ASTPtr Parser::parseWhileLoop() {
 
   std::vector<ast::ASTPtr> Body;
 
-  if (consumeToken(TokenKind::TK_OpenBrace)) {
-    while (!consumeToken(TokenKind::TK_CloseBrace)) {
+  if (consumeToken(TokenKind::TK_OpenBrace))
+    while (!consumeToken(TokenKind::TK_CloseBrace))
       Body.push_back(parseStatement());
-    }
-  } else {
+  else
     // Braceless loop.
     Body.push_back(parseStatement());
-  }
 
   return std::make_unique<ast::WhileLoop>(std::move(Cond), std::move(Body));
 }
@@ -201,14 +188,12 @@ ast::ASTPtr Parser::parseForLoop() {
 
   std::vector<ast::ASTPtr> Body;
 
-  if (consumeToken(TokenKind::TK_OpenBrace)) {
-    while (!consumeToken(TokenKind::TK_CloseBrace)) {
+  if (consumeToken(TokenKind::TK_OpenBrace))
+    while (!consumeToken(TokenKind::TK_CloseBrace))
       Body.push_back(parseStatement());
-    }
-  } else {
+  else
     // Braceless loop.
     Body.push_back(parseStatement());
-  }
 
   return std::make_unique<ast::ForLoop>(std::move(Init), std::move(Cond),
                                         std::move(Iter), std::move(Body));
@@ -217,9 +202,8 @@ ast::ASTPtr Parser::parseForLoop() {
 ast::ASTPtr Parser::parseExpr() {
   auto Left = parseAssignment();
   const auto Operator = CurrentToken.Kind;
-  if (!consumeToken(TokenKind::TK_Comma)) {
+  if (!consumeToken(TokenKind::TK_Comma))
     return Left;
-  }
 
   return std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
                                          parseExpr());
@@ -239,9 +223,8 @@ ast::ASTPtr Parser::parsePrimaryExpr() {
   case TokenKind::TK_StringLiteral:
     return std::make_unique<ast::StringLiteral>(std::move(Identifier));
   case TokenKind::TK_Identifier: {
-    if (consumeToken(TokenKind::TK_OpenParen)) {
+    if (consumeToken(TokenKind::TK_OpenParen))
       return parseFunctionCall(std::move(Identifier));
-    }
 
     return std::make_unique<ast::VariableRef>(std::move(Identifier));
   }
@@ -263,19 +246,17 @@ ast::ASTPtr Parser::parseAssignment() {
       consumeToken(TokenKind::TK_AndEq) || consumeToken(TokenKind::TK_OrEq) ||
       consumeToken(TokenKind::TK_XorEq) ||
       consumeToken(TokenKind::TK_ShiftLeftEq) ||
-      consumeToken(TokenKind::TK_ShiftRightEq)) {
+      consumeToken(TokenKind::TK_ShiftRightEq))
     return std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
                                            parseAssignment());
-  }
 
   return Left;
 }
 
 ast::ASTPtr Parser::parseTernary() {
   auto Cond = parseLogicalOr();
-  if (!consumeToken(TokenKind::TK_Question)) {
+  if (!consumeToken(TokenKind::TK_Question))
     return Cond;
-  }
 
   auto Then = parseExpr();
   expectToken(TokenKind::TK_Colon);
@@ -288,10 +269,9 @@ ast::ASTPtr Parser::parseTernary() {
 ast::ASTPtr Parser::parseLogicalOr() {
   auto Cond = parseLogicalAnd();
   const auto Operator = CurrentToken.Kind;
-  while (consumeToken(TokenKind::TK_LogicalOr)) {
+  while (consumeToken(TokenKind::TK_LogicalOr))
     Cond = std::make_unique<ast::BinaryOp>(Operator, std::move(Cond),
                                            parseLogicalAnd());
-  }
 
   return Cond;
 }
@@ -299,10 +279,9 @@ ast::ASTPtr Parser::parseLogicalOr() {
 ast::ASTPtr Parser::parseLogicalAnd() {
   auto Left = parseBitwiseOr();
   const auto Operator = CurrentToken.Kind;
-  while (consumeToken(TokenKind::TK_And)) {
+  while (consumeToken(TokenKind::TK_And))
     Left = std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
                                            parseLogicalAnd());
-  }
 
   return Left;
 }
@@ -310,10 +289,9 @@ ast::ASTPtr Parser::parseLogicalAnd() {
 ast::ASTPtr Parser::parseBitwiseOr() {
   auto Left = parseBitwiseXor();
   const auto Operator = CurrentToken.Kind;
-  while (consumeToken(TokenKind::TK_Or)) {
+  while (consumeToken(TokenKind::TK_Or))
     Left = std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
                                            parseBitwiseXor());
-  }
 
   return Left;
 }
@@ -321,10 +299,9 @@ ast::ASTPtr Parser::parseBitwiseOr() {
 ast::ASTPtr Parser::parseBitwiseXor() {
   auto Left = parseBitwiseAnd();
   const auto Operator = CurrentToken.Kind;
-  while (consumeToken(TokenKind::TK_Xor)) {
+  while (consumeToken(TokenKind::TK_Xor))
     Left = std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
                                            parseBitwiseAnd());
-  }
 
   return Left;
 }
@@ -332,10 +309,9 @@ ast::ASTPtr Parser::parseBitwiseXor() {
 ast::ASTPtr Parser::parseBitwiseAnd() {
   auto Left = parseEquality();
   const auto Operator = CurrentToken.Kind;
-  while (consumeToken(TokenKind::TK_And)) {
+  while (consumeToken(TokenKind::TK_And))
     Left = std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
                                            parseEquality());
-  }
 
   return Left;
 }
@@ -345,12 +321,11 @@ ast::ASTPtr Parser::parseEquality() {
   while (true) {
     const auto Operator = CurrentToken.Kind;
     if (consumeToken(TokenKind::TK_Equals) ||
-        consumeToken(TokenKind::TK_NotEquals)) {
+        consumeToken(TokenKind::TK_NotEquals))
       Left = std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
                                              parseRelational());
-    } else {
+    else
       return Left;
-    }
   }
 }
 
@@ -361,12 +336,11 @@ ast::ASTPtr Parser::parseRelational() {
     if (consumeToken(TokenKind::TK_LessThan) ||
         consumeToken(TokenKind::TK_GreaterThan) ||
         consumeToken(TokenKind::TK_LessThanEq) ||
-        consumeToken(TokenKind::TK_GreaterThanEq)) {
+        consumeToken(TokenKind::TK_GreaterThanEq))
       Left = std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
                                              parseShift());
-    } else {
+    else
       return Left;
-    }
   }
 }
 
@@ -375,12 +349,11 @@ ast::ASTPtr Parser::parseShift() {
   while (true) {
     const auto Operator = CurrentToken.Kind;
     if (consumeToken(TokenKind::TK_ShiftLeft) ||
-        consumeToken(TokenKind::TK_ShiftRight)) {
+        consumeToken(TokenKind::TK_ShiftRight))
       Left = std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
                                              parseAddition());
-    } else {
+    else
       return Left;
-    }
   }
 }
 
@@ -388,13 +361,11 @@ ast::ASTPtr Parser::parseAddition() {
   auto Left = parseMultiplication();
   while (true) {
     const auto Operator = CurrentToken.Kind;
-    if (consumeToken(TokenKind::TK_Add) ||
-        consumeToken(TokenKind::TK_Subtract)) {
+    if (consumeToken(TokenKind::TK_Add) || consumeToken(TokenKind::TK_Subtract))
       Left = std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
                                              parseMultiplication());
-    } else {
+    else
       return Left;
-    }
   }
 }
 
@@ -404,12 +375,11 @@ ast::ASTPtr Parser::parseMultiplication() {
     const auto Operator = CurrentToken.Kind;
     if (consumeToken(TokenKind::TK_Multiply) ||
         consumeToken(TokenKind::TK_Divide) ||
-        consumeToken(TokenKind::TK_Modulus)) {
+        consumeToken(TokenKind::TK_Modulus))
       Left = std::make_unique<ast::BinaryOp>(Operator, std::move(Left),
                                              parseUnary());
-    } else {
+    else
       return Left;
-    }
   }
 }
 
@@ -422,9 +392,8 @@ ast::ASTPtr Parser::parseUnary() {
   }
 
   if (consumeToken(TokenKind::TK_Multiply) || consumeToken(TokenKind::TK_Add) ||
-      consumeToken(TokenKind::TK_Not) || consumeToken(TokenKind::TK_SizeOf)) {
+      consumeToken(TokenKind::TK_Not) || consumeToken(TokenKind::TK_SizeOf))
     return std::make_unique<ast::UnaryOp>(Operator, parseUnary());
-  }
 
   if (consumeToken(TokenKind::TK_Increment) ||
       consumeToken(TokenKind::TK_Decrement)) {
@@ -487,9 +456,8 @@ ast::ASTPtr Parser::parsePostfix() {
 ast::ASTPtr Parser::parseFunctionCall(std::string &&FunctionName) {
   std::vector<ast::ASTPtr> Args;
   while (!consumeToken(TokenKind::TK_CloseParen)) {
-    if (!Args.empty()) {
+    if (!Args.empty())
       expectToken(TokenKind::TK_Comma);
-    }
 
     Args.push_back(parseAssignment());
   }
@@ -502,41 +470,37 @@ ast::CType Parser::parseType() {
   const bool Unsigned = consumeToken(TokenKind::TK_Unsigned);
 
   const ast::CLengthKind Length = [this]() {
-    if (consumeToken(TokenKind::TK_Short)) {
+    if (consumeToken(TokenKind::TK_Short))
       return ast::CLengthKind::CLK_Short;
-    } else if (consumeToken(TokenKind::TK_Long)) {
-      if (consumeToken(TokenKind::TK_Long)) {
+    else if (consumeToken(TokenKind::TK_Long))
+      if (consumeToken(TokenKind::TK_Long))
         return ast::CLengthKind::CLK_LongLong;
-      } else {
+      else
         return ast::CLengthKind::CLK_Long;
-      }
-    } else {
+    else
       return ast::CLengthKind::CLK_Default;
-    }
   }();
 
   const ast::CTypeKind Type = [this]() {
-    if (consumeToken(TokenKind::TK_Int)) {
+    if (consumeToken(TokenKind::TK_Int))
       return ast::CTypeKind::CTK_Int;
-    } else if (consumeToken(TokenKind::TK_Char)) {
+    else if (consumeToken(TokenKind::TK_Char))
       return ast::CTypeKind::CTK_Char;
-    } else if (consumeToken(TokenKind::TK_Float)) {
+    else if (consumeToken(TokenKind::TK_Float))
       return ast::CTypeKind::CTK_Float;
-    } else if (consumeToken(TokenKind::TK_Double)) {
+    else if (consumeToken(TokenKind::TK_Double))
       return ast::CTypeKind::CTK_Double;
-    } else if (consumeToken(TokenKind::TK_Void)) {
+    else if (consumeToken(TokenKind::TK_Void))
       return ast::CTypeKind::CTK_Void;
-    } else {
+    else
       throw ParseException(fmt::format("Unknown type name: {}. Expected one of "
                                        "(void, char, int, float, double).",
                                        CurrentToken.Value));
-    }
   }();
 
   unsigned int Pointer = 0;
-  while (consumeToken(TokenKind::TK_Multiply)) {
+  while (consumeToken(TokenKind::TK_Multiply))
     ++Pointer;
-  }
 
   return ast::CType(Type, Length, Unsigned, Pointer);
 }

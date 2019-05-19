@@ -62,9 +62,8 @@ isSymbol(const T &Value, const std::vector<std::pair<T, TokenKind>> &Mappings) {
                      return Value == SymbolPair.first;
                    });
 
-  if (MappingIter == Mappings.end()) {
+  if (MappingIter == Mappings.end())
     return std::make_pair(false, TokenKind::TK_None);
-  }
 
   return std::make_pair(true, MappingIter->second);
 }
@@ -87,12 +86,11 @@ bool Lexer::lex(Token &Tok) {
 
 bool Lexer::lexToken(Token &Tok) {
   // Trim any leading whitespace.
-  while (std::isspace(CurrentChar)) {
+  while (std::isspace(CurrentChar))
     if (!readNextChar()) {
       Tok.assign(TokenKind::TK_EOF);
       return false;
     }
-  }
 
   if (std::isalpha(CurrentChar)) {
     lexIdentifier(Tok);
@@ -109,9 +107,8 @@ bool Lexer::lexToken(Token &Tok) {
     auto Kind = Result.second;
     std::string CompoundSymbol{CurrentChar};
     while (readNextChar()) {
-      if (std::isspace(CurrentChar)) {
+      if (std::isspace(CurrentChar))
         continue;
-      }
 
       CompoundSymbol.push_back(CurrentChar);
       const auto CResult = isSymbol(CompoundSymbol, CompoundSymbolMappings);
@@ -153,15 +150,13 @@ void Lexer::lexIdentifier(Token &Tok) {
   std::string Identifier;
   while (!std::isspace(CurrentChar) &&
          !isSymbol(CurrentChar, SymbolMappings).first) {
-    if (!std::isalpha(CurrentChar) && CurrentChar != '_') {
+    if (!std::isalpha(CurrentChar) && CurrentChar != '_')
       throw ParseException(
           "Encountered non-alphabetical character in identifier name.");
-    }
 
     Identifier.push_back(CurrentChar);
-    if (!readNextChar()) {
+    if (!readNextChar())
       break;
-    }
   }
 
   auto KeywordIter = std::find_if(
@@ -184,22 +179,19 @@ void Lexer::lexNumber(Token &Tok) {
   std::string NumberLiteral;
   while (!std::isspace(CurrentChar) &&
          !isSymbol(CurrentChar, SymbolMappings).first) {
-    if (!std::isdigit(CurrentChar)) {
+    if (!std::isdigit(CurrentChar))
       throw ParseException("Encountered non-numeric character in number.");
-    }
 
     NumberLiteral.push_back(CurrentChar);
-    if (!readNextChar()) {
+    if (!readNextChar())
       break;
-    }
   }
 
   // In the case of decimal, read after the period.
   if (CurrentChar == '.') {
     NumberLiteral.push_back(CurrentChar);
-    while (readNextChar() && !isSymbol(CurrentChar, SymbolMappings).first) {
+    while (readNextChar() && !isSymbol(CurrentChar, SymbolMappings).first)
       NumberLiteral.push_back(CurrentChar);
-    }
 
     Tok.assign(TokenKind::TK_FloatLiteral, std::move(NumberLiteral));
   } else {
@@ -210,17 +202,15 @@ void Lexer::lexNumber(Token &Tok) {
 void Lexer::lexChar(Token &Tok) {
   assert(CurrentChar == '\'');
 
-  if (!readNextChar()) {
+  if (!readNextChar())
     throw ParseException(
         "Encountered opening single quote at the end of source.");
-  }
 
   std::string CharLiteral{CurrentChar};
 
-  if (!readNextChar() && CurrentChar != '\'') {
+  if (!readNextChar() && CurrentChar != '\'')
     throw ParseException(
         "Encountered character literal with a length greater than 1.");
-  }
 
   Tok.assign(TokenKind::TK_CharLiteral, std::move(CharLiteral));
 }
@@ -228,17 +218,15 @@ void Lexer::lexChar(Token &Tok) {
 void Lexer::lexString(Token &Tok) {
   assert(CurrentChar == '\"');
 
-  if (!readNextChar()) {
+  if (!readNextChar())
     throw ParseException(
         "Encountered open quotation mark at the end of source.");
-  }
 
   std::string StringLiteral;
   while (CurrentChar != '\"') {
     StringLiteral.push_back(CurrentChar);
-    if (!readNextChar()) {
+    if (!readNextChar())
       throw ParseException("String literal has no closing quotation mark.");
-    }
   }
 
   assert(CurrentChar == '\"');
@@ -247,9 +235,8 @@ void Lexer::lexString(Token &Tok) {
 }
 
 bool Lexer::readNextChar() {
-  if (Current > End) {
+  if (Current > End)
     return false;
-  }
 
   // Read and advance to next char.
   CurrentChar = *Current;
